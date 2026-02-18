@@ -17,6 +17,9 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
 
     steps:
       - name: Checkout
@@ -34,7 +37,10 @@ jobs:
           pip install -r requirements-build.txt
 
       - name: Build executable
-        run: python build.py
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          python build.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
