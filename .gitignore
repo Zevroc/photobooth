@@ -43,3 +43,8 @@ assets/temp/*
 !assets/temp/.gitkeep
 config/config.json
 *.log
+
+# PyInstaller
+*.spec.bak
+*.manifest
+*.spec~
