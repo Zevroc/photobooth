@@ -49,27 +49,28 @@ class PreviewScreen(QWidget):
         actions_layout.setSpacing(15)
         
         # Email button
-        email_btn = QPushButton("📧 Email")
-        email_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
-        email_btn.setStyleSheet(self._button_style("#3498db"))
-        email_btn.clicked.connect(self.on_email_clicked)
-        actions_layout.addWidget(email_btn)
+        self.email_btn = QPushButton("📧 Email")
+        self.email_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+        self.email_btn.setStyleSheet(self._button_style("#3498db"))
+        self.email_btn.clicked.connect(self.on_email_clicked)
+        actions_layout.addWidget(self.email_btn)
         
         # OneDrive button
-        onedrive_btn = QPushButton("☁ OneDrive")
-        onedrive_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
-        onedrive_btn.setStyleSheet(self._button_style("#0078d4"))
-        onedrive_btn.clicked.connect(self.on_onedrive_clicked)
-        actions_layout.addWidget(onedrive_btn)
+        self.onedrive_btn = QPushButton("☁ OneDrive")
+        self.onedrive_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+        self.onedrive_btn.setStyleSheet(self._button_style("#0078d4"))
+        self.onedrive_btn.clicked.connect(self.on_onedrive_clicked)
+        actions_layout.addWidget(self.onedrive_btn)
         
         # Print button
-        print_btn = QPushButton("🖨 Imprimer")
-        print_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
-        print_btn.setStyleSheet(self._button_style("#9b59b6"))
-        print_btn.clicked.connect(self.on_print_clicked)
-        actions_layout.addWidget(print_btn)
+        self.print_btn = QPushButton("🖨 Imprimer")
+        self.print_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+        self.print_btn.setStyleSheet(self._button_style("#9b59b6"))
+        self.print_btn.clicked.connect(self.on_print_clicked)
+        actions_layout.addWidget(self.print_btn)
         
         layout.addLayout(actions_layout)
+        self.actions_layout = actions_layout
         
         # Bottom buttons
         bottom_layout = QHBoxLayout()
@@ -117,6 +118,18 @@ class PreviewScreen(QWidget):
         
         self.setLayout(layout)
         self.setStyleSheet("background-color: #f8fafc;")
+
+    def set_enabled_actions(self, email_enabled: bool, onedrive_enabled: bool, print_enabled: bool):
+        """Show/hide sharing actions based on enabled options.
+
+        Args:
+            email_enabled: Whether email action is enabled
+            onedrive_enabled: Whether OneDrive action is enabled
+            print_enabled: Whether print action is enabled
+        """
+        self.email_btn.setVisible(email_enabled)
+        self.onedrive_btn.setVisible(onedrive_enabled)
+        self.print_btn.setVisible(print_enabled)
     
     def _button_style(self, color):
         """Generate button style with given color.

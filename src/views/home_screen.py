@@ -24,25 +24,96 @@ class HomeScreen(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(30)
+
+        # Top-right admin icon button
+        top_layout = QHBoxLayout()
+        top_layout.addStretch()
+
+        admin_btn = QPushButton("⚙")
+        admin_btn.setFixedSize(56, 56)
+        admin_btn.setToolTip("Administration")
+        admin_btn.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
+        admin_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1e293b;
+                color: #f8fafc;
+                border: none;
+                border-radius: 28px;
+            }
+            QPushButton:hover {
+                background-color: #334155;
+            }
+        """)
+        admin_btn.clicked.connect(self.admin_requested.emit)
+        top_layout.addWidget(admin_btn)
+
+        layout.addLayout(top_layout)
         
         # Title
-        title = QLabel("Bienvenue au Photobooth!")
-        title.setFont(QFont("Segoe UI", 36, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("color: #0f172a; margin-bottom: 8px;")
-        layout.addWidget(title)
+        self.title_label = QLabel("Bienvenue au Photobooth!")
+        self.title_label.setFont(QFont("Segoe UI", 36, QFont.Weight.Bold))
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setStyleSheet("color: #0f172a; margin-bottom: 8px;")
+        layout.addWidget(self.title_label)
         
         # Subtitle
-        subtitle = QLabel("Choisissez votre cadre préféré")
-        subtitle.setFont(QFont("Segoe UI", 18, QFont.Weight.Medium))
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("color: #475569; margin-bottom: 12px;")
-        layout.addWidget(subtitle)
+        self.subtitle_label = QLabel("Choisissez votre cadre préféré")
+        self.subtitle_label.setFont(QFont("Segoe UI", 18, QFont.Weight.Medium))
+        self.subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.subtitle_label.setStyleSheet("color: #475569; margin-bottom: 12px;")
+        layout.addWidget(self.subtitle_label)
         
         # Frames grid
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setStyleSheet("border: none; background: transparent;")
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            QScrollBar:vertical {
+                background: #e2e8f0;
+                width: 16px;
+                margin: 8px 2px 8px 2px;
+                border-radius: 8px;
+            }
+            QScrollBar::handle:vertical {
+                background: #2563eb;
+                min-height: 40px;
+                border-radius: 8px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #1d4ed8;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+                background: transparent;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+            QScrollBar:horizontal {
+                background: #e2e8f0;
+                height: 16px;
+                margin: 2px 8px 2px 8px;
+                border-radius: 8px;
+            }
+            QScrollBar::handle:horizontal {
+                background: #2563eb;
+                min-width: 40px;
+                border-radius: 8px;
+            }
+            QScrollBar::handle:horizontal:hover {
+                background: #1d4ed8;
+            }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                width: 0px;
+                background: transparent;
+            }
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                background: transparent;
+            }
+        """)
         
         frames_widget = QWidget()
         self.frames_layout = QGridLayout(frames_widget)
@@ -55,25 +126,7 @@ class HomeScreen(QWidget):
         # Bottom buttons
         bottom_layout = QHBoxLayout()
         bottom_layout.setSpacing(20)
-        
-        # Admin button
-        admin_btn = QPushButton("⚙ Administration")
-        admin_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
-        admin_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #1e293b;
-                color: #f8fafc;
-                border: none;
-                border-radius: 12px;
-                padding: 14px 24px;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-            }
-        """)
-        admin_btn.clicked.connect(self.admin_requested.emit)
-        bottom_layout.addWidget(admin_btn)
-        
+
         bottom_layout.addStretch()
         
         # Start button
@@ -212,3 +265,15 @@ class HomeScreen(QWidget):
         """Handle start button click."""
         if self.start_btn.isEnabled():
             self.frame_selected.emit(self.selected_frame)
+
+    def set_home_texts(self, title: str, subtitle: str, start_button_text: str):
+        """Set configurable home texts.
+
+        Args:
+            title: Main title text
+            subtitle: Subtitle text
+            start_button_text: Start button label
+        """
+        self.title_label.setText(title or "Bienvenue au Photobooth!")
+        self.subtitle_label.setText(subtitle or "Choisissez votre cadre préféré")
+        self.start_btn.setText(start_button_text or "Commencer ➔")

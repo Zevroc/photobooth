@@ -53,6 +53,10 @@ class AppConfig:
     available_frames: List[str]
     save_to_disk: bool = True
     photos_directory: str = "assets/photos"
+    home_title: str = "Bienvenue au Photobooth!"
+    home_subtitle: str = "Choisissez votre cadre préféré"
+    home_start_button_text: str = "Commencer ➔"
+    start_fullscreen: bool = True
     
     @classmethod
     def load(cls, config_path: str = "config/config.json") -> "AppConfig":
@@ -67,7 +71,11 @@ class AppConfig:
                     printer=PrinterConfig(**data.get('printer', {})),
                     available_frames=data.get('available_frames', []),
                     save_to_disk=data.get('save_to_disk', True),
-                    photos_directory=data.get('photos_directory', 'assets/photos')
+                    photos_directory=data.get('photos_directory', 'assets/photos'),
+                    home_title=data.get('home_title', 'Bienvenue au Photobooth!'),
+                    home_subtitle=data.get('home_subtitle', 'Choisissez votre cadre préféré'),
+                    home_start_button_text=data.get('home_start_button_text', 'Commencer ➔'),
+                    start_fullscreen=data.get('start_fullscreen', True)
                 )
         else:
             # Return default configuration
@@ -78,7 +86,11 @@ class AppConfig:
                 printer=PrinterConfig(),
                 available_frames=[],
                 save_to_disk=True,
-                photos_directory='assets/photos'
+                photos_directory='assets/photos',
+                home_title='Bienvenue au Photobooth!',
+                home_subtitle='Choisissez votre cadre préféré',
+                home_start_button_text='Commencer ➔',
+                start_fullscreen=True
             )
     
     def save(self, config_path: str = "config/config.json") -> None:
@@ -92,5 +104,9 @@ class AppConfig:
                 'printer': asdict(self.printer),
                 'available_frames': self.available_frames,
                 'save_to_disk': self.save_to_disk,
-                'photos_directory': self.photos_directory
+                'photos_directory': self.photos_directory,
+                'home_title': self.home_title,
+                'home_subtitle': self.home_subtitle,
+                'home_start_button_text': self.home_start_button_text,
+                'start_fullscreen': self.start_fullscreen
             }, f, indent=4)

@@ -27,5 +27,9 @@
     },
     "available_frames": [],
     "save_to_disk": true,
-    "photos_directory": "assets/photos"
+    "photos_directory": "assets/photos",
+    "home_title": "Bienvenue au Photobooth!",
+    "home_subtitle": "Choisissez votre cadre préféré",
+    "home_start_button_text": "Commencer ➔",
+    "start_fullscreen": true
 }

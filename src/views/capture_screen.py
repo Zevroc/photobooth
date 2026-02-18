@@ -65,10 +65,26 @@ class CaptureScreen(QWidget):
         self.countdown_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.countdown_label.setStyleSheet("color: #f97316;")
         self.countdown_label.hide()
+
+        # Capture button (bottom-center overlay)
+        self.capture_btn = QPushButton("📷\nPrendre\nla photo")
+        self.capture_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        self.capture_btn.clicked.connect(self.start_countdown)
+        self.update_capture_button_style(185)
         
         # Place countdown on top of preview
-        self.preview_label.setLayout(QVBoxLayout())
-        self.preview_label.layout().addWidget(self.countdown_label)
+        overlay_layout = QVBoxLayout()
+        overlay_layout.setContentsMargins(20, 20, 20, 20)
+        overlay_layout.addWidget(self.countdown_label, 0, Qt.AlignmentFlag.AlignCenter)
+        overlay_layout.addStretch()
+
+        capture_layout = QHBoxLayout()
+        capture_layout.addStretch()
+        capture_layout.addWidget(self.capture_btn)
+        capture_layout.addStretch()
+        overlay_layout.addLayout(capture_layout)
+
+        self.preview_label.setLayout(overlay_layout)
         
         # Buttons
         button_layout = QHBoxLayout()
@@ -94,31 +110,48 @@ class CaptureScreen(QWidget):
         
         button_layout.addStretch()
         
-        # Capture button
-        self.capture_btn = QPushButton("📷 Prendre la Photo")
-        self.capture_btn.setFont(QFont("Segoe UI", 17, QFont.Weight.Bold))
-        self.capture_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563eb;
-                color: #ffffff;
-                border: none;
-                border-radius: 12px;
-                padding: 16px 36px;
-            }
-            QPushButton:hover {
-                background-color: #1d4ed8;
-            }
-            QPushButton:disabled {
-                background-color: #94a3b8;
-            }
-        """)
-        self.capture_btn.clicked.connect(self.start_countdown)
-        button_layout.addWidget(self.capture_btn)
-        
         layout.addLayout(button_layout)
         
         self.setLayout(layout)
         self.setStyleSheet("background-color: #f8fafc;")
+
+    def update_capture_button_style(self, diameter: int):
+        """Update round capture button size and style.
+
+        Args:
+            diameter: Button diameter in pixels
+        """
+        diameter = max(140, min(220, int(diameter)))
+        radius = diameter // 2
+        border_width = max(4, diameter // 36)
+        font_size = max(13, diameter // 13)
+
+        self.capture_btn.setFixedSize(diameter, diameter)
+        self.capture_btn.setFont(QFont("Segoe UI", font_size, QFont.Weight.Bold))
+        self.capture_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #2563eb;
+                color: #ffffff;
+                border: {border_width}px solid #e2e8f0;
+                border-radius: {radius}px;
+                padding: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: #1d4ed8;
+            }}
+            QPushButton:disabled {{
+                background-color: #94a3b8;
+                color: #e2e8f0;
+            }}
+        """)
+
+    def _adapt_capture_button_size(self):
+        """Adapt capture button size to preview area."""
+        ref_size = min(self.preview_label.width(), self.preview_label.height())
+        if ref_size <= 0:
+            return
+        target_diameter = int(ref_size * 0.23)
+        self.update_capture_button_style(target_diameter)
     
     def set_frame(self, frame_path: str):
         """Set the selected frame.
@@ -253,9 +286,15 @@ class CaptureScreen(QWidget):
     def showEvent(self, event):
         """Handle show event."""
         super().showEvent(event)
+        self._adapt_capture_button_size()
         self.start_camera()
     
     def hideEvent(self, event):
         """Handle hide event."""
         super().hideEvent(event)
         self.stop_camera()
+
+    def resizeEvent(self, event):
+        """Handle resize event."""
+        super().resizeEvent(event)
+        self._adapt_capture_button_size()

@@ -61,6 +61,7 @@ class AdminScreen(QWidget):
         """)
         
         self.tabs.addTab(self.create_camera_tab(), "📷 Caméra")
+        self.tabs.addTab(self.create_home_tab(), "🏠 Accueil")
         self.tabs.addTab(self.create_frames_tab(), "🖼 Cadres")
         self.tabs.addTab(self.create_onedrive_tab(), "☁ OneDrive")
         self.tabs.addTab(self.create_email_tab(), "📧 Email")
@@ -224,6 +225,29 @@ class AdminScreen(QWidget):
         
         widget.setLayout(layout)
         return widget
+
+    def create_home_tab(self):
+        """Create home screen text settings tab."""
+        widget = QWidget()
+        layout = QFormLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        self.home_title_edit = QLineEdit(self.config.home_title)
+        layout.addRow("Titre accueil:", self.home_title_edit)
+
+        self.home_subtitle_edit = QLineEdit(self.config.home_subtitle)
+        layout.addRow("Sous-titre accueil:", self.home_subtitle_edit)
+
+        self.home_start_button_edit = QLineEdit(self.config.home_start_button_text)
+        layout.addRow("Texte bouton démarrer:", self.home_start_button_edit)
+
+        self.start_fullscreen_check = QCheckBox("Démarrer en plein écran")
+        self.start_fullscreen_check.setChecked(self.config.start_fullscreen)
+        layout.addRow("", self.start_fullscreen_check)
+
+        widget.setLayout(layout)
+        return widget
     
     def create_onedrive_tab(self):
         """Create OneDrive settings tab."""
@@ -349,6 +373,12 @@ class AdminScreen(QWidget):
         self.config.printer.enabled = self.printer_enabled.isChecked()
         self.config.printer.printer_name = self.printer_combo.currentData()
         self.config.printer.paper_size = self.paper_size_combo.currentText()
+
+        # Update home screen text config
+        self.config.home_title = self.home_title_edit.text().strip() or "Bienvenue au Photobooth!"
+        self.config.home_subtitle = self.home_subtitle_edit.text().strip() or "Choisissez votre cadre préféré"
+        self.config.home_start_button_text = self.home_start_button_edit.text().strip() or "Commencer ➔"
+        self.config.start_fullscreen = self.start_fullscreen_check.isChecked()
         
         # Save to file
         self.config.save()

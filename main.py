@@ -3,7 +3,6 @@ import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
 
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
@@ -147,9 +146,23 @@ class PhotoboothApp(QMainWindow):
         
         # Load frames in home screen
         self.home_screen.load_frames("assets/frames")
+        self.home_screen.set_home_texts(
+            self.config.home_title,
+            self.config.home_subtitle,
+            self.config.home_start_button_text
+        )
+        self.preview_screen.set_enabled_actions(
+            self.config.email.enabled,
+            self.config.onedrive.enabled,
+            self.config.printer.enabled
+        )
         
         # Show home screen
         self.show_home()
+
+        # Start window mode from configuration
+        if self.config.start_fullscreen:
+            self.showFullScreen()
     
     def show_home(self):
         """Show home screen."""
@@ -210,6 +223,38 @@ class PhotoboothApp(QMainWindow):
             (self.config.camera.resolution_width, self.config.camera.resolution_height)
         )
         self.capture_screen.camera = self.camera_controller
+
+        # Update service controllers
+        self.onedrive_controller = OneDriveController(
+            self.config.onedrive.client_id,
+            self.config.onedrive.tenant_id,
+            self.config.onedrive.enabled
+        )
+        self.email_controller = EmailController(
+            self.config.email.smtp_server,
+            self.config.email.smtp_port,
+            self.config.email.sender_email,
+            self.config.email.sender_password,
+            self.config.email.use_tls,
+            self.config.email.enabled
+        )
+        self.printer_controller = PrinterController(
+            self.config.printer.printer_name,
+            self.config.printer.enabled,
+            self.config.printer.paper_size
+        )
+
+        # Update home and preview UI options from config
+        self.home_screen.set_home_texts(
+            self.config.home_title,
+            self.config.home_subtitle,
+            self.config.home_start_button_text
+        )
+        self.preview_screen.set_enabled_actions(
+            self.config.email.enabled,
+            self.config.onedrive.enabled,
+            self.config.printer.enabled
+        )
         
         # Reload frames
         self.home_screen.load_frames("assets/frames")
@@ -223,6 +268,23 @@ class PhotoboothApp(QMainWindow):
         # Clean up camera
         self.camera_controller.stop()
         event.accept()
+
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts for fullscreen mode."""
+        if event.key() == Qt.Key.Key_F11:
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
+            event.accept()
+            return
+
+        if event.key() == Qt.Key.Key_Escape and self.isFullScreen():
+            self.showNormal()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
 
 
 def main():
