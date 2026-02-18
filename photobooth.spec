@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_all
+
 block_cipher = None
+
+pyqt6_datas, pyqt6_binaries, pyqt6_hiddenimports = collect_all('PyQt6')
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=pyqt6_binaries,
     datas=[
         ('assets', 'assets'),
         ('config', 'config'),
@@ -13,8 +17,9 @@ a = Analysis(
         # This ensures dynamic imports and resource loading work correctly
         ('src', 'src'),
         ('DISTRIBUTION_README.md', '.'),
-    ],
+    ] + pyqt6_datas,
     hiddenimports=[
+        'PyQt6',
         'PyQt6.QtCore',
         'PyQt6.QtGui',
         'PyQt6.QtWidgets',
@@ -42,7 +47,7 @@ a = Analysis(
         'win32print',
         'win32api',
         'win32con',
-    ],
+    ] + pyqt6_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
