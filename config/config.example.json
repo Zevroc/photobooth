@@ -1,0 +1,31 @@
+{
+    "camera": {
+        "device_id": 0,
+        "device_name": "Default Camera",
+        "resolution_width": 1920,
+        "resolution_height": 1080,
+        "fps": 30
+    },
+    "onedrive": {
+        "client_id": "",
+        "tenant_id": "",
+        "enabled": false,
+        "folder_path": "/Photos/Photobooth"
+    },
+    "email": {
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "sender_email": "",
+        "sender_password": "",
+        "use_tls": true,
+        "enabled": false
+    },
+    "printer": {
+        "printer_name": "",
+        "enabled": false,
+        "paper_size": "A4"
+    },
+    "available_frames": [],
+    "save_to_disk": true,
+    "photos_directory": "assets/photos"
+}
