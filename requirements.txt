@@ -16,7 +16,6 @@ requests==2.31.0
 secure-smtplib==0.1.1
 
 # Printing
-win32print; platform_system=="Windows"
 pywin32; platform_system=="Windows"
 
 # Configuration
