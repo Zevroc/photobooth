@@ -109,6 +109,22 @@ python main.py
 5. Configurer les options de partage (optionnel)
 6. Sauvegarder
 
+### 📦 Compilation en Exécutable
+
+Pour créer un fichier exécutable Windows (.exe) :
+
+```bash
+# Installer les dépendances de build
+pip install -r requirements.txt
+
+# Compiler l'application
+python build.py
+```
+
+L'exécutable sera créé dans `dist/Photobooth/Photobooth.exe`
+
+Pour plus de détails, consultez le **[Guide de Compilation](docs/BUILD.md)**
+
 ## 📖 Documentation
 
 - **[Guide d'installation](docs/INSTALLATION.md)** - Installation détaillée et configuration

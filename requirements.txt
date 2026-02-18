@@ -24,3 +24,6 @@ pyyaml==6.0.1
 
 # Utilities
 python-dateutil==2.8.2
+
+# Build tools (for creating executables)
+pyinstaller==6.3.0

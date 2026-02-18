@@ -1,0 +1,4 @@
+# Build requirements for creating executables
+# Install these in addition to requirements.txt when building the application
+
+pyinstaller==6.3.0
