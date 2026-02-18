@@ -183,6 +183,10 @@ class PhotoboothApp(QMainWindow):
             photo: Captured Photo object
         """
         self.current_photo = photo
+
+        if photo and photo.frame_path and not photo.frame_applied:
+            photo = self.photo_controller.apply_frame(photo, photo.frame_path)
+            self.current_photo = photo
         
         # Save photo to disk
         saved_path = self.photo_controller.save_photo(photo)

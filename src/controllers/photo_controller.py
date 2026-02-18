@@ -30,32 +30,46 @@ class PhotoController:
         Returns:
             Photo with frame applied
         """
-        if not os.path.exists(frame_path):
+        if not frame_path or not os.path.exists(frame_path):
             return photo
         
         try:
-            # Load frame
-            frame = Image.open(frame_path).convert('RGBA')
-            
-            # Convert photo to PIL Image
-            photo_img = Image.fromarray(photo.image_data).convert('RGBA')
-            
-            # Resize photo to match frame size
-            photo_img = photo_img.resize(frame.size, Image.Resampling.LANCZOS)
-            
-            # Composite photo and frame
-            combined = Image.alpha_composite(photo_img, frame)
-            
-            # Convert back to numpy array
-            result_array = np.array(combined.convert('RGB'))
-            
-            photo.image_data = result_array
+            photo.image_data = self.apply_frame_to_array(photo.image_data, frame_path)
             photo.frame_path = frame_path
+            photo.frame_applied = True
             
             return photo
         except Exception as e:
             print(f"Error applying frame: {e}")
             return photo
+
+    def apply_frame_to_array(self, image_data: np.ndarray, frame_path: str) -> np.ndarray:
+        """Apply a frame overlay to raw RGB image data.
+
+        Args:
+            image_data: RGB image data
+            frame_path: Path to frame image
+
+        Returns:
+            RGB image with frame applied
+        """
+        if image_data is None or not frame_path or not os.path.exists(frame_path):
+            return image_data
+
+        # Load frame
+        frame = Image.open(frame_path).convert('RGBA')
+
+        # Convert photo to PIL Image
+        photo_img = Image.fromarray(image_data).convert('RGBA')
+
+        # Resize frame to match photo size
+        frame = frame.resize(photo_img.size, Image.Resampling.LANCZOS)
+
+        # Composite photo and frame
+        combined = Image.alpha_composite(photo_img, frame)
+
+        # Convert back to numpy array
+        return np.array(combined.convert('RGB'))
     
     def save_photo(self, photo: Photo, filename: Optional[str] = None) -> str:
         """Save photo to disk.

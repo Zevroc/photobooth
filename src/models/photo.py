@@ -11,6 +11,7 @@ class Photo:
     image_data: np.ndarray  # The actual image data
     timestamp: datetime
     frame_path: Optional[str] = None
+    frame_applied: bool = False
     width: int = 0
     height: int = 0
     

@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QMessageBox
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QImage, QPixmap, QFont
+from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
 from src.models.photo import Photo
@@ -30,6 +30,8 @@ class CaptureScreen(QWidget):
         
         self.countdown_timer = QTimer()
         self.countdown_timer.timeout.connect(self.update_countdown)
+
+        self.frame_preview_cache = {}
         
         self.init_ui()
     
@@ -125,6 +127,7 @@ class CaptureScreen(QWidget):
             frame_path: Path to frame image
         """
         self.selected_frame = frame_path if frame_path else None
+        self.frame_preview_cache = {}
     
     def start_camera(self):
         """Start the camera preview."""
@@ -154,15 +157,22 @@ class CaptureScreen(QWidget):
         """Update the camera preview frame."""
         frame = self.camera.get_frame()
         if frame is not None:
+            display_frame = frame
+            if self.selected_frame:
+                try:
+                    display_frame = self.photo_controller.apply_frame_to_array(frame, self.selected_frame)
+                except Exception:
+                    display_frame = frame
+
             self.preview_label.setStyleSheet("""
                 background-color: #34495e;
                 border: 2px solid #1e293b;
                 border-radius: 14px;
             """)
             # Convert numpy array to QImage
-            height, width, channel = frame.shape
+            height, width, channel = display_frame.shape
             bytes_per_line = 3 * width
-            q_image = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+            q_image = QImage(display_frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
             
             # Scale to fit preview
             pixmap = QPixmap.fromImage(q_image)
@@ -171,6 +181,34 @@ class CaptureScreen(QWidget):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             )
+
+            if self.is_capturing:
+                painter = QPainter(scaled_pixmap)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                if self.countdown > 0:
+                    overlay_text = str(self.countdown)
+                else:
+                    overlay_text = "📷"
+
+                font_size = max(64, min(scaled_pixmap.width(), scaled_pixmap.height()) // 3)
+                font = QFont("Segoe UI", font_size, QFont.Weight.Bold)
+                painter.setFont(font)
+
+                painter.setPen(QColor(15, 23, 42, 210))
+                painter.drawText(
+                    scaled_pixmap.rect().adjusted(4, 4, 4, 4),
+                    Qt.AlignmentFlag.AlignCenter,
+                    overlay_text
+                )
+
+                painter.setPen(QColor(249, 115, 22))
+                painter.drawText(
+                    scaled_pixmap.rect(),
+                    Qt.AlignmentFlag.AlignCenter,
+                    overlay_text
+                )
+                painter.end()
+
             self.preview_label.setPixmap(scaled_pixmap)
     
     def start_countdown(self):
@@ -178,8 +216,6 @@ class CaptureScreen(QWidget):
         self.countdown = 3
         self.is_capturing = True
         self.capture_btn.setEnabled(False)
-        self.countdown_label.show()
-        self.countdown_label.setText(str(self.countdown))
         self.countdown_timer.start(1000)  # 1 second interval
     
     def update_countdown(self):
@@ -187,10 +223,9 @@ class CaptureScreen(QWidget):
         self.countdown -= 1
         
         if self.countdown > 0:
-            self.countdown_label.setText(str(self.countdown))
+            return
         else:
             self.countdown_timer.stop()
-            self.countdown_label.setText("📷")
             QTimer.singleShot(500, self.capture_photo)
     
     def capture_photo(self):
@@ -207,7 +242,6 @@ class CaptureScreen(QWidget):
             QMessageBox.critical(self, "Erreur", "Échec de la capture de photo")
         
         # Reset UI
-        self.countdown_label.hide()
         self.capture_btn.setEnabled(True)
         self.is_capturing = False
     
