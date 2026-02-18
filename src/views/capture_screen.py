@@ -130,19 +130,35 @@ class CaptureScreen(QWidget):
         """Start the camera preview."""
         if not self.camera.is_active:
             if self.camera.start():
+                self.title.setText("Préparez-vous!")
                 self.timer.start(30)  # Update at ~30 FPS
             else:
-                QMessageBox.critical(self, "Erreur", "Impossible de démarrer la caméra")
+                self.capture_btn.setEnabled(False)
+                self.title.setText("Caméra indisponible")
+                self.preview_label.setText("Impossible d'ouvrir la caméra.\nVérifiez la configuration dans Administration.")
+                self.preview_label.setStyleSheet("""
+                    background-color: #0f172a;
+                    color: #cbd5e1;
+                    border: 2px solid #1e293b;
+                    border-radius: 14px;
+                    padding: 24px;
+                """)
     
     def stop_camera(self):
         """Stop the camera preview."""
         self.timer.stop()
         self.camera.stop()
+        self.capture_btn.setEnabled(True)
     
     def update_frame(self):
         """Update the camera preview frame."""
         frame = self.camera.get_frame()
         if frame is not None:
+            self.preview_label.setStyleSheet("""
+                background-color: #34495e;
+                border: 2px solid #1e293b;
+                border-radius: 14px;
+            """)
             # Convert numpy array to QImage
             height, width, channel = frame.shape
             bytes_per_line = 3 * width

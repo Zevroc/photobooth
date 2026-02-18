@@ -2,11 +2,11 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QLineEdit, QComboBox, QCheckBox,
-    QTabWidget, QFormLayout, QFileDialog, QScrollArea,
+    QTabWidget, QFormLayout, QFileDialog,
     QGroupBox, QMessageBox
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtGui import QFont, QImage, QPixmap
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
 from src.controllers.printer_controller import PrinterController
@@ -21,6 +21,9 @@ class AdminScreen(QWidget):
     def __init__(self, config: AppConfig):
         super().__init__()
         self.config = config
+        self.preview_controller = None
+        self.preview_timer = QTimer()
+        self.preview_timer.timeout.connect(self.update_camera_preview)
         self.init_ui()
     
     def init_ui(self):
@@ -31,54 +34,56 @@ class AdminScreen(QWidget):
         
         # Title
         title = QLabel("⚙ Administration")
-        title.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", 28, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("color: #2c3e50;")
+        title.setStyleSheet("color: #0f172a;")
         layout.addWidget(title)
         
         # Tabs
-        tabs = QTabWidget()
-        tabs.setStyleSheet("""
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 2px solid #bdc3c7;
-                border-radius: 5px;
-                background-color: white;
+                border: 1px solid #cbd5e1;
+                border-radius: 10px;
+                background-color: #ffffff;
             }
             QTabBar::tab {
-                background-color: #ecf0f1;
-                padding: 10px 20px;
+                background-color: #e2e8f0;
+                color: #0f172a;
+                padding: 10px 18px;
                 margin-right: 5px;
-                border-top-left-radius: 5px;
-                border-top-right-radius: 5px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
             }
             QTabBar::tab:selected {
-                background-color: white;
+                background-color: #ffffff;
             }
         """)
         
-        tabs.addTab(self.create_camera_tab(), "📷 Caméra")
-        tabs.addTab(self.create_frames_tab(), "🖼 Cadres")
-        tabs.addTab(self.create_onedrive_tab(), "☁ OneDrive")
-        tabs.addTab(self.create_email_tab(), "📧 Email")
-        tabs.addTab(self.create_printer_tab(), "🖨 Imprimante")
+        self.tabs.addTab(self.create_camera_tab(), "📷 Caméra")
+        self.tabs.addTab(self.create_frames_tab(), "🖼 Cadres")
+        self.tabs.addTab(self.create_onedrive_tab(), "☁ OneDrive")
+        self.tabs.addTab(self.create_email_tab(), "📧 Email")
+        self.tabs.addTab(self.create_printer_tab(), "🖨 Imprimante")
+        self.tabs.currentChanged.connect(self.on_tab_changed)
         
-        layout.addWidget(tabs, 1)
+        layout.addWidget(self.tabs, 1)
         
         # Bottom buttons
         button_layout = QHBoxLayout()
         
         back_btn = QPushButton("← Retour")
-        back_btn.setFont(QFont("Arial", 14))
+        back_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         back_btn.setStyleSheet("""
             QPushButton {
-                background-color: #95a5a6;
-                color: white;
+                background-color: #1e293b;
+                color: #ffffff;
                 border: none;
-                border-radius: 10px;
-                padding: 15px 30px;
+                border-radius: 12px;
+                padding: 12px 22px;
             }
             QPushButton:hover {
-                background-color: #7f8c8d;
+                background-color: #334155;
             }
         """)
         back_btn.clicked.connect(self.back_requested.emit)
@@ -87,17 +92,17 @@ class AdminScreen(QWidget):
         button_layout.addStretch()
         
         save_btn = QPushButton("💾 Sauvegarder")
-        save_btn.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        save_btn.setFont(QFont("Segoe UI", 15, QFont.Weight.Bold))
         save_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2ecc71;
-                color: white;
+                background-color: #2563eb;
+                color: #ffffff;
                 border: none;
-                border-radius: 10px;
-                padding: 15px 40px;
+                border-radius: 12px;
+                padding: 12px 28px;
             }
             QPushButton:hover {
-                background-color: #27ae60;
+                background-color: #1d4ed8;
             }
         """)
         save_btn.clicked.connect(self.save_config)
@@ -106,34 +111,89 @@ class AdminScreen(QWidget):
         layout.addLayout(button_layout)
         
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #ecf0f1;")
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f8fafc;
+                color: #0f172a;
+            }
+            QLabel {
+                color: #0f172a;
+                font-size: 13px;
+            }
+            QLineEdit, QComboBox {
+                background-color: #ffffff;
+                color: #0f172a;
+                border: 1px solid #cbd5e1;
+                border-radius: 10px;
+                padding: 8px 10px;
+            }
+            QLineEdit:read-only {
+                background-color: #f1f5f9;
+                color: #334155;
+            }
+            QCheckBox {
+                color: #0f172a;
+            }
+        """)
     
     def create_camera_tab(self):
         """Create camera settings tab."""
         widget = QWidget()
-        layout = QFormLayout()
+        layout = QVBoxLayout()
+        form_layout = QFormLayout()
         layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
+        form_layout.setSpacing(15)
+        form_layout.setContentsMargins(20, 20, 20, 8)
         
         # Camera selection
         self.camera_combo = QComboBox()
         cameras = CameraController.list_available_cameras()
-        for device_id, name in cameras:
-            self.camera_combo.addItem(name, device_id)
+        if cameras:
+            for device_id, name in cameras:
+                self.camera_combo.addItem(name, device_id)
+        else:
+            self.camera_combo.addItem("Aucune caméra détectée", 0)
         
         # Set current camera
         current_index = self.camera_combo.findData(self.config.camera.device_id)
         if current_index >= 0:
             self.camera_combo.setCurrentIndex(current_index)
         
-        layout.addRow("Caméra:", self.camera_combo)
+        form_layout.addRow("Caméra:", self.camera_combo)
         
         # Resolution
         self.resolution_combo = QComboBox()
         self.resolution_combo.addItem("1920x1080 (Full HD)", (1920, 1080))
         self.resolution_combo.addItem("1280x720 (HD)", (1280, 720))
         self.resolution_combo.addItem("640x480 (VGA)", (640, 480))
-        layout.addRow("Résolution:", self.resolution_combo)
+        current_resolution = (self.config.camera.resolution_width, self.config.camera.resolution_height)
+        resolution_index = self.resolution_combo.findData(current_resolution)
+        if resolution_index >= 0:
+            self.resolution_combo.setCurrentIndex(resolution_index)
+        form_layout.addRow("Résolution:", self.resolution_combo)
+
+        layout.addLayout(form_layout)
+
+        preview_title = QLabel("Aperçu caméra")
+        preview_title.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        layout.addWidget(preview_title)
+
+        self.camera_preview_label = QLabel("Aperçu indisponible")
+        self.camera_preview_label.setMinimumSize(420, 240)
+        self.camera_preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.camera_preview_label.setStyleSheet("""
+            QLabel {
+                background-color: #0f172a;
+                color: #cbd5e1;
+                border: 1px solid #334155;
+                border-radius: 12px;
+            }
+        """)
+        layout.addWidget(self.camera_preview_label)
+
+        self.camera_combo.currentIndexChanged.connect(self.start_camera_preview)
+        self.resolution_combo.currentIndexChanged.connect(self.start_camera_preview)
+        layout.addStretch()
         
         widget.setLayout(layout)
         return widget
@@ -264,8 +324,12 @@ class AdminScreen(QWidget):
     def save_config(self):
         """Save configuration."""
         # Update camera config
-        self.config.camera.device_id = self.camera_combo.currentData()
+        selected_device = self.camera_combo.currentData()
+        self.config.camera.device_id = int(selected_device) if selected_device is not None else 0
         self.config.camera.device_name = self.camera_combo.currentText()
+        selected_resolution = self.resolution_combo.currentData() or (1920, 1080)
+        self.config.camera.resolution_width = int(selected_resolution[0])
+        self.config.camera.resolution_height = int(selected_resolution[1])
         
         # Update OneDrive config
         self.config.onedrive.enabled = self.onedrive_enabled.isChecked()
@@ -291,3 +355,66 @@ class AdminScreen(QWidget):
         
         QMessageBox.information(self, "Succès", "Configuration sauvegardée!")
         self.config_saved.emit()
+
+    def on_tab_changed(self, index: int):
+        """Handle tab change events."""
+        if index == 0:
+            self.start_camera_preview()
+        else:
+            self.stop_camera_preview()
+
+    def start_camera_preview(self):
+        """Start live camera preview in admin camera tab."""
+        if self.tabs.currentIndex() != 0:
+            return
+
+        self.stop_camera_preview()
+
+        device_id = self.camera_combo.currentData()
+        resolution = self.resolution_combo.currentData() or (1280, 720)
+        self.preview_controller = CameraController(int(device_id) if device_id is not None else 0, resolution)
+
+        if self.preview_controller.start():
+            self.camera_preview_label.setText("")
+            self.preview_timer.start(80)
+        else:
+            self.camera_preview_label.setPixmap(QPixmap())
+            self.camera_preview_label.setText("Impossible d'ouvrir la caméra sélectionnée")
+
+    def update_camera_preview(self):
+        """Update camera preview frame."""
+        if not self.preview_controller:
+            return
+
+        frame = self.preview_controller.get_frame()
+        if frame is None:
+            return
+
+        height, width, channel = frame.shape
+        bytes_per_line = 3 * width
+        q_image = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(q_image)
+        scaled = pixmap.scaled(
+            self.camera_preview_label.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
+        )
+        self.camera_preview_label.setPixmap(scaled)
+
+    def stop_camera_preview(self):
+        """Stop live camera preview."""
+        self.preview_timer.stop()
+        if self.preview_controller:
+            self.preview_controller.stop()
+            self.preview_controller = None
+
+    def showEvent(self, event):
+        """Handle show event."""
+        super().showEvent(event)
+        if self.tabs.currentIndex() == 0:
+            self.start_camera_preview()
+
+    def hideEvent(self, event):
+        """Handle hide event."""
+        super().hideEvent(event)
+        self.stop_camera_preview()

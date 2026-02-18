@@ -1,6 +1,7 @@
 """Camera controller for managing camera devices and capture."""
 import cv2
 import numpy as np
+import platform
 from typing import Optional, List, Tuple
 from src.models.photo import Photo
 from datetime import datetime
@@ -28,7 +29,13 @@ class CameraController:
             True if camera started successfully, False otherwise
         """
         try:
-            self.camera = cv2.VideoCapture(self.device_id)
+            try:
+                camera_id = int(self.device_id)
+            except (TypeError, ValueError):
+                camera_id = 0
+
+            backend = cv2.CAP_DSHOW if platform.system() == "Windows" else cv2.CAP_ANY
+            self.camera = cv2.VideoCapture(camera_id, backend)
             if not self.camera.isOpened():
                 return False
             
@@ -92,11 +99,12 @@ class CameraController:
             List of tuples (device_id, device_name)
         """
         cameras = []
+        backend = cv2.CAP_DSHOW if platform.system() == "Windows" else cv2.CAP_ANY
         for i in range(10):  # Check first 10 indices
-            cap = cv2.VideoCapture(i)
+            cap = cv2.VideoCapture(i, backend)
             if cap.isOpened():
                 cameras.append((i, f"Camera {i}"))
-                cap.release()
+            cap.release()
         return cameras
     
     def __del__(self):
