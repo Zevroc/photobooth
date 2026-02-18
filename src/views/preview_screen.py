@@ -1,7 +1,7 @@
 """Preview screen for reviewing and sharing captured photo."""
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QLineEdit, QMessageBox, QInputDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QMessageBox, QInputDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap, QFont
@@ -28,18 +28,18 @@ class PreviewScreen(QWidget):
         
         # Title
         title = QLabel("Votre Photo!")
-        title.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("color: #2c3e50;")
+        title.setStyleSheet("color: #0f172a;")
         layout.addWidget(title)
         
         # Photo preview
         self.photo_label = QLabel()
         self.photo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.photo_label.setStyleSheet("""
-            background-color: white;
-            border: 5px solid #2c3e50;
-            border-radius: 10px;
+            background-color: #ffffff;
+            border: 2px solid #1e293b;
+            border-radius: 14px;
         """)
         self.photo_label.setMinimumSize(600, 450)
         layout.addWidget(self.photo_label, 1)
@@ -50,21 +50,21 @@ class PreviewScreen(QWidget):
         
         # Email button
         email_btn = QPushButton("📧 Email")
-        email_btn.setFont(QFont("Arial", 14))
+        email_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         email_btn.setStyleSheet(self._button_style("#3498db"))
         email_btn.clicked.connect(self.on_email_clicked)
         actions_layout.addWidget(email_btn)
         
         # OneDrive button
         onedrive_btn = QPushButton("☁ OneDrive")
-        onedrive_btn.setFont(QFont("Arial", 14))
+        onedrive_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         onedrive_btn.setStyleSheet(self._button_style("#0078d4"))
         onedrive_btn.clicked.connect(self.on_onedrive_clicked)
         actions_layout.addWidget(onedrive_btn)
         
         # Print button
         print_btn = QPushButton("🖨 Imprimer")
-        print_btn.setFont(QFont("Arial", 14))
+        print_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         print_btn.setStyleSheet(self._button_style("#9b59b6"))
         print_btn.clicked.connect(self.on_print_clicked)
         actions_layout.addWidget(print_btn)
@@ -77,17 +77,17 @@ class PreviewScreen(QWidget):
         
         # Retake button
         retake_btn = QPushButton("← Reprendre")
-        retake_btn.setFont(QFont("Arial", 14))
+        retake_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         retake_btn.setStyleSheet("""
             QPushButton {
-                background-color: #e67e22;
-                color: white;
+                background-color: #1e293b;
+                color: #f8fafc;
                 border: none;
-                border-radius: 10px;
-                padding: 15px 30px;
+                border-radius: 12px;
+                padding: 14px 24px;
             }
             QPushButton:hover {
-                background-color: #d35400;
+                background-color: #334155;
             }
         """)
         retake_btn.clicked.connect(self.retake_requested.emit)
@@ -97,17 +97,17 @@ class PreviewScreen(QWidget):
         
         # Done button
         done_btn = QPushButton("Terminé ✓")
-        done_btn.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        done_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         done_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2ecc71;
-                color: white;
+                background-color: #2563eb;
+                color: #ffffff;
                 border: none;
-                border-radius: 10px;
-                padding: 20px 50px;
+                border-radius: 12px;
+                padding: 16px 36px;
             }
             QPushButton:hover {
-                background-color: #27ae60;
+                background-color: #1d4ed8;
             }
         """)
         done_btn.clicked.connect(self.done.emit)
@@ -116,7 +116,7 @@ class PreviewScreen(QWidget):
         layout.addLayout(bottom_layout)
         
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #ecf0f1;")
+        self.setStyleSheet("background-color: #f8fafc;")
     
     def _button_style(self, color):
         """Generate button style with given color.
@@ -131,10 +131,10 @@ class PreviewScreen(QWidget):
         return f"""
             QPushButton {{
                 background-color: {color};
-                color: white;
+                color: #ffffff;
                 border: none;
-                border-radius: 8px;
-                padding: 12px 25px;
+                border-radius: 12px;
+                padding: 12px 24px;
             }}
             QPushButton:hover {{
                 background-color: {darker};

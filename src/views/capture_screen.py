@@ -41,9 +41,9 @@ class CaptureScreen(QWidget):
         
         # Title
         self.title = QLabel("Préparez-vous!")
-        self.title.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        self.title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
+        self.title.setStyleSheet("color: #0f172a; margin-bottom: 12px;")
         layout.addWidget(self.title)
         
         # Camera preview
@@ -51,17 +51,17 @@ class CaptureScreen(QWidget):
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setStyleSheet("""
             background-color: #34495e;
-            border: 5px solid #2c3e50;
-            border-radius: 10px;
+            border: 2px solid #1e293b;
+            border-radius: 14px;
         """)
         self.preview_label.setMinimumSize(800, 600)
         layout.addWidget(self.preview_label, 1)
         
         # Countdown label
         self.countdown_label = QLabel("")
-        self.countdown_label.setFont(QFont("Arial", 120, QFont.Weight.Bold))
+        self.countdown_label.setFont(QFont("Segoe UI", 108, QFont.Weight.Bold))
         self.countdown_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.countdown_label.setStyleSheet("color: #e74c3c;")
+        self.countdown_label.setStyleSheet("color: #f97316;")
         self.countdown_label.hide()
         
         # Place countdown on top of preview
@@ -74,17 +74,17 @@ class CaptureScreen(QWidget):
         
         # Back button
         back_btn = QPushButton("← Retour")
-        back_btn.setFont(QFont("Arial", 14))
+        back_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         back_btn.setStyleSheet("""
             QPushButton {
-                background-color: #95a5a6;
-                color: white;
+                background-color: #1e293b;
+                color: #f8fafc;
                 border: none;
-                border-radius: 10px;
-                padding: 15px 30px;
+                border-radius: 12px;
+                padding: 14px 24px;
             }
             QPushButton:hover {
-                background-color: #7f8c8d;
+                background-color: #334155;
             }
         """)
         back_btn.clicked.connect(self.on_back_clicked)
@@ -94,20 +94,20 @@ class CaptureScreen(QWidget):
         
         # Capture button
         self.capture_btn = QPushButton("📷 Prendre la Photo")
-        self.capture_btn.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        self.capture_btn.setFont(QFont("Segoe UI", 17, QFont.Weight.Bold))
         self.capture_btn.setStyleSheet("""
             QPushButton {
-                background-color: #e74c3c;
-                color: white;
+                background-color: #2563eb;
+                color: #ffffff;
                 border: none;
-                border-radius: 10px;
-                padding: 20px 50px;
+                border-radius: 12px;
+                padding: 16px 36px;
             }
             QPushButton:hover {
-                background-color: #c0392b;
+                background-color: #1d4ed8;
             }
             QPushButton:disabled {
-                background-color: #bdc3c7;
+                background-color: #94a3b8;
             }
         """)
         self.capture_btn.clicked.connect(self.start_countdown)
@@ -116,7 +116,7 @@ class CaptureScreen(QWidget):
         layout.addLayout(button_layout)
         
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #ecf0f1;")
+        self.setStyleSheet("background-color: #f8fafc;")
     
     def set_frame(self, frame_path: str):
         """Set the selected frame.

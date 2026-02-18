@@ -27,26 +27,27 @@ class HomeScreen(QWidget):
         
         # Title
         title = QLabel("Bienvenue au Photobooth!")
-        title.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", 36, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 20px;")
+        title.setStyleSheet("color: #0f172a; margin-bottom: 8px;")
         layout.addWidget(title)
         
         # Subtitle
         subtitle = QLabel("Choisissez votre cadre préféré")
-        subtitle.setFont(QFont("Arial", 20))
+        subtitle.setFont(QFont("Segoe UI", 18, QFont.Weight.Medium))
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("color: #7f8c8d; margin-bottom: 30px;")
+        subtitle.setStyleSheet("color: #475569; margin-bottom: 12px;")
         layout.addWidget(subtitle)
         
         # Frames grid
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setStyleSheet("border: none;")
+        scroll_area.setStyleSheet("border: none; background: transparent;")
         
         frames_widget = QWidget()
         self.frames_layout = QGridLayout(frames_widget)
         self.frames_layout.setSpacing(20)
+        self.frame_buttons = []
         
         scroll_area.setWidget(frames_widget)
         layout.addWidget(scroll_area, 1)
@@ -57,17 +58,17 @@ class HomeScreen(QWidget):
         
         # Admin button
         admin_btn = QPushButton("⚙ Administration")
-        admin_btn.setFont(QFont("Arial", 14))
+        admin_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         admin_btn.setStyleSheet("""
             QPushButton {
-                background-color: #95a5a6;
-                color: white;
+                background-color: #1e293b;
+                color: #f8fafc;
                 border: none;
-                border-radius: 10px;
-                padding: 15px 30px;
+                border-radius: 12px;
+                padding: 14px 24px;
             }
             QPushButton:hover {
-                background-color: #7f8c8d;
+                background-color: #334155;
             }
         """)
         admin_btn.clicked.connect(self.admin_requested.emit)
@@ -77,20 +78,20 @@ class HomeScreen(QWidget):
         
         # Start button
         self.start_btn = QPushButton("Commencer ➔")
-        self.start_btn.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        self.start_btn.setFont(QFont("Segoe UI", 17, QFont.Weight.Bold))
         self.start_btn.setStyleSheet("""
             QPushButton {
-                background-color: #3498db;
-                color: white;
+                background-color: #2563eb;
+                color: #ffffff;
                 border: none;
-                border-radius: 10px;
-                padding: 20px 50px;
+                border-radius: 12px;
+                padding: 16px 36px;
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background-color: #1d4ed8;
             }
             QPushButton:disabled {
-                background-color: #bdc3c7;
+                background-color: #94a3b8;
             }
         """)
         self.start_btn.setEnabled(False)
@@ -100,7 +101,7 @@ class HomeScreen(QWidget):
         layout.addLayout(bottom_layout)
         
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #ecf0f1;")
+        self.setStyleSheet("background-color: #f8fafc;")
     
     def load_frames(self, frames_dir: str):
         """Load available frames from directory.
@@ -116,6 +117,7 @@ class HomeScreen(QWidget):
         
         # Add "No Frame" option
         no_frame_btn = self.create_frame_button(None, "Sans Cadre")
+        self.frame_buttons = [no_frame_btn]
         self.frames_layout.addWidget(no_frame_btn, 0, 0)
         
         # Load frames from directory
@@ -126,6 +128,7 @@ class HomeScreen(QWidget):
             for i, frame_file in enumerate(frame_files, start=1):
                 frame_path = os.path.join(frames_dir, frame_file)
                 frame_btn = self.create_frame_button(frame_path, os.path.splitext(frame_file)[0])
+                self.frame_buttons.append(frame_btn)
                 row = i // 3
                 col = i % 3
                 self.frames_layout.addWidget(frame_btn, row, col)
@@ -144,16 +147,18 @@ class HomeScreen(QWidget):
         btn.setFixedSize(250, 250)
         btn.setStyleSheet("""
             QPushButton {
-                background-color: white;
-                border: 3px solid #bdc3c7;
-                border-radius: 10px;
+                background-color: #ffffff;
+                border: 2px solid #cbd5e1;
+                border-radius: 14px;
             }
             QPushButton:hover {
-                border-color: #3498db;
+                border-color: #3b82f6;
+                background-color: #f8fafc;
             }
             QPushButton:checked {
-                border-color: #2ecc71;
-                border-width: 5px;
+                border-color: #2563eb;
+                border-width: 3px;
+                background-color: #eff6ff;
             }
         """)
         btn.setCheckable(True)
@@ -171,14 +176,16 @@ class HomeScreen(QWidget):
             layout.addWidget(img_label)
         else:
             placeholder = QLabel("📷")
-            placeholder.setFont(QFont("Arial", 64))
+            placeholder.setFont(QFont("Segoe UI", 56, QFont.Weight.Bold))
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder.setStyleSheet("color: #2563eb;")
             layout.addWidget(placeholder)
         
         # Name label
         name_label = QLabel(name)
-        name_label.setFont(QFont("Arial", 12))
+        name_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Medium))
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        name_label.setStyleSheet("color: #0f172a;")
         layout.addWidget(name_label)
         
         btn.setLayout(layout)
@@ -194,15 +201,14 @@ class HomeScreen(QWidget):
             button: The button that was clicked
         """
         # Uncheck all other buttons
-        for i in range(self.frames_layout.count()):
-            item = self.frames_layout.itemAt(i)
-            if item and item.widget() and item.widget() != button:
-                item.widget().setChecked(False)
+        for frame_button in self.frame_buttons:
+            if frame_button != button:
+                frame_button.setChecked(False)
         
-        self.selected_frame = frame_path
+        self.selected_frame = frame_path if frame_path else ""
         self.start_btn.setEnabled(True)
     
     def on_start_clicked(self):
         """Handle start button click."""
-        if self.selected_frame is not None:
-            self.frame_selected.emit(self.selected_frame if self.selected_frame else "")
+        if self.start_btn.isEnabled():
+            self.frame_selected.emit(self.selected_frame)

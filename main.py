@@ -18,6 +18,56 @@ from src.views.preview_screen import PreviewScreen
 from src.views.admin_screen import AdminScreen
 
 
+APP_STYLE = """
+QMainWindow {
+    background: #f8fafc;
+}
+
+QLabel {
+    color: #0f172a;
+}
+
+QPushButton {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QPushButton:focus {
+    border: 2px solid #93c5fd;
+}
+
+QLineEdit, QComboBox, QTextEdit, QSpinBox {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 10px;
+    color: #0f172a;
+}
+
+QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QSpinBox:focus {
+    border: 2px solid #60a5fa;
+}
+
+QGroupBox {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    margin-top: 10px;
+    padding-top: 12px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 4px;
+}
+"""
+
+
 class PhotoboothApp(QMainWindow):
     """Main photobooth application."""
     
@@ -185,6 +235,7 @@ def main():
     
     # Set application style
     app.setStyle("Fusion")
+    app.setStyleSheet(APP_STYLE)
     
     # Create and show main window
     window = PhotoboothApp()
