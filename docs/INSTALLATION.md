@@ -4,6 +4,7 @@
 
 ### Système
 - Windows 10/11 (recommandé pour support tactile complet)
+- Linux Ubuntu/Debian (supporté pour développement/tests)
 - Python 3.8 ou supérieur
 - Webcam intégrée ou externe (USB/WiFi)
 
@@ -39,9 +40,40 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### 4.b Linux uniquement : installer les bibliothèques système Qt/OpenGL
+```bash
+sudo apt-get install -y \
+   libgl1 \
+   libegl1 \
+   libxkbcommon0 \
+   libxcb-cursor0
+```
+
 ### 5. Lancer l'application
 ```bash
 python main.py
+```
+
+## 🪟 Prérequis Windows (runtime)
+
+Pour exécuter `Photobooth.exe` sur une machine Windows cible :
+
+1. Installer **Microsoft Visual C++ Redistributable 2015-2022 (x64)**
+2. Installer les pilotes de la caméra
+3. Installer les pilotes d'imprimante (si impression utilisée)
+
+Ensuite lancer :
+
+```powershell
+dist\Photobooth\Photobooth.exe
+```
+
+## 🐧 Exécution en environnement Linux headless
+
+Pour tester le binaire sans interface graphique (ex: container) :
+
+```bash
+QT_QPA_PLATFORM=offscreen ./dist/Photobooth/Photobooth
 ```
 
 ## 🎯 Configuration

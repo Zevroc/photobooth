@@ -4,6 +4,7 @@ PyQt6-Qt6==6.6.1
 PyQt6-sip==13.6.0
 
 # Camera and Image Processing
+numpy==1.26.4
 opencv-python==4.9.0.80
 Pillow==12.1.1
 

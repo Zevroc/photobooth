@@ -128,6 +128,50 @@ L'exécutable sera créé dans `dist/Photobooth/Photobooth.exe`
 
 Pour plus de détails, consultez le **[Guide de Compilation](docs/BUILD.md)**
 
+## 🖥️ Dépendances système (Linux et Windows)
+
+### Linux (Ubuntu/Debian)
+
+Pour exécuter l'application (ou le binaire compilé) sur Linux, installez d'abord les bibliothèques système Qt/OpenGL :
+
+```bash
+sudo apt-get install -y \
+  libgl1 \
+  libegl1 \
+  libxkbcommon0 \
+  libxcb-cursor0
+```
+
+Si vous êtes en environnement sans écran (container/serveur), vous pouvez tester le démarrage en mode offscreen :
+
+```bash
+QT_QPA_PLATFORM=offscreen ./dist/Photobooth/Photobooth
+```
+
+### Windows
+
+Sur Windows 10/11, installez les prérequis suivants avant d'exécuter `Photobooth.exe` :
+
+1. **Microsoft Visual C++ Redistributable 2015-2022 (x64)**
+2. **Pilotes caméra** (webcam USB ou caméra intégrée)
+3. **Pilotes imprimante** (si impression activée)
+
+Puis lancez l'application :
+
+```powershell
+dist\Photobooth\Photobooth.exe
+```
+
+Si vous construisez depuis les sources sous Windows :
+
+```powershell
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+pip install -r requirements-build.txt
+python build.py
+```
+
 ## 📖 Documentation
 
 - **[Guide d'installation](docs/INSTALLATION.md)** - Installation détaillée et configuration
