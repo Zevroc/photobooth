@@ -12,24 +12,24 @@ import shutil
 
 def clean_build_directories():
     """Clean previous build artifacts."""
-    print("🧹 Cleaning previous build artifacts...")
+    print("[INFO] Cleaning previous build artifacts...")
     directories = ['build', 'dist']
     for directory in directories:
         if os.path.exists(directory):
             shutil.rmtree(directory)
             print(f"   Removed {directory}/")
-    print("✓ Build directories cleaned\n")
+    print("[OK] Build directories cleaned\n")
 
 
 def check_dependencies():
     """Check if PyInstaller is installed."""
-    print("📦 Checking build dependencies...")
+    print("[INFO] Checking build dependencies...")
     try:
         import PyInstaller
-        print(f"✓ PyInstaller {PyInstaller.__version__} is installed\n")
+        print(f"[OK] PyInstaller {PyInstaller.__version__} is installed\n")
         return True
     except ImportError:
-        print("❌ PyInstaller is not installed")
+        print("[ERROR] PyInstaller is not installed")
         print("\nTo install PyInstaller, run:")
         print("  pip install pyinstaller\n")
         return False
@@ -37,7 +37,7 @@ def check_dependencies():
 
 def build_executable():
     """Build the executable using PyInstaller."""
-    print("🔨 Building executable...")
+    print("[INFO] Building executable...")
     print("   This may take a few minutes...\n")
     
     try:
@@ -49,22 +49,22 @@ def build_executable():
         )
         
         if result.returncode == 0:
-            print("✓ Build completed successfully!\n")
+            print("[OK] Build completed successfully!\n")
             return True
         else:
-            print("❌ Build failed!")
+            print("[ERROR] Build failed!")
             print("\nError output:")
             print(result.stderr)
             return False
             
     except Exception as e:
-        print(f"❌ Error during build: {e}")
+        print(f"[ERROR] Error during build: {e}")
         return False
 
 
 def verify_build():
     """Verify that the executable was created."""
-    print("🔍 Verifying build output...")
+    print("[INFO] Verifying build output...")
     
     import platform
     
@@ -75,11 +75,11 @@ def verify_build():
     
     if os.path.exists(exe_path):
         size_mb = os.path.getsize(exe_path) / (1024 * 1024)
-        print(f"✓ Executable created: {exe_path}")
+        print(f"[OK] Executable created: {exe_path}")
         print(f"  Size: {size_mb:.1f} MB\n")
         return True
     else:
-        print(f"❌ Executable not found at {exe_path}\n")
+        print(f"[ERROR] Executable not found at {exe_path}\n")
         return False
 
 
@@ -107,7 +107,7 @@ def main():
     
     # Success message
     print("=" * 60)
-    print("🎉 Build completed successfully!")
+    print("[OK] Build completed successfully!")
     print("=" * 60)
     print()
     print("The executable is located at:")
