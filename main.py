@@ -145,6 +145,7 @@ class PhotoboothApp(QMainWindow):
         self.admin_screen.config_saved.connect(self.on_config_saved)
         
         # Load frames in home screen
+        self.home_screen.set_frames_options(self.config.show_no_frame_option)
         self.home_screen.load_frames("assets/frames")
         self.home_screen.set_home_texts(
             self.config.home_title,
@@ -250,6 +251,7 @@ class PhotoboothApp(QMainWindow):
             self.config.home_subtitle,
             self.config.home_start_button_text
         )
+        self.home_screen.set_frames_options(self.config.show_no_frame_option)
         self.preview_screen.set_enabled_actions(
             self.config.email.enabled,
             self.config.onedrive.enabled,

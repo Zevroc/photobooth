@@ -57,6 +57,7 @@ class AppConfig:
     home_subtitle: str = "Choisissez votre cadre préféré"
     home_start_button_text: str = "Commencer ➔"
     start_fullscreen: bool = True
+    show_no_frame_option: bool = True
     
     @classmethod
     def load(cls, config_path: str = "config/config.json") -> "AppConfig":
@@ -75,7 +76,8 @@ class AppConfig:
                     home_title=data.get('home_title', 'Bienvenue au Photobooth!'),
                     home_subtitle=data.get('home_subtitle', 'Choisissez votre cadre préféré'),
                     home_start_button_text=data.get('home_start_button_text', 'Commencer ➔'),
-                    start_fullscreen=data.get('start_fullscreen', True)
+                    start_fullscreen=data.get('start_fullscreen', True),
+                    show_no_frame_option=data.get('show_no_frame_option', True)
                 )
         else:
             # Return default configuration
@@ -90,7 +92,8 @@ class AppConfig:
                 home_title='Bienvenue au Photobooth!',
                 home_subtitle='Choisissez votre cadre préféré',
                 home_start_button_text='Commencer ➔',
-                start_fullscreen=True
+                start_fullscreen=True,
+                show_no_frame_option=True
             )
     
     def save(self, config_path: str = "config/config.json") -> None:
@@ -108,5 +111,6 @@ class AppConfig:
                 'home_title': self.home_title,
                 'home_subtitle': self.home_subtitle,
                 'home_start_button_text': self.home_start_button_text,
-                'start_fullscreen': self.start_fullscreen
+                'start_fullscreen': self.start_fullscreen,
+                'show_no_frame_option': self.show_no_frame_option
             }, f, indent=4)

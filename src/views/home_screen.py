@@ -17,6 +17,7 @@ class HomeScreen(QWidget):
     def __init__(self):
         super().__init__()
         self.selected_frame = None
+        self.show_no_frame_option = True
         self.init_ui()
     
     def init_ui(self):
@@ -32,13 +33,14 @@ class HomeScreen(QWidget):
         admin_btn = QPushButton("⚙")
         admin_btn.setFixedSize(56, 56)
         admin_btn.setToolTip("Administration")
-        admin_btn.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
+        admin_btn.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
         admin_btn.setStyleSheet("""
             QPushButton {
                 background-color: #1e293b;
                 color: #f8fafc;
                 border: none;
                 border-radius: 28px;
+                padding: 0px 0px 4px 0px;
             }
             QPushButton:hover {
                 background-color: #334155;
@@ -123,36 +125,6 @@ class HomeScreen(QWidget):
         scroll_area.setWidget(frames_widget)
         layout.addWidget(scroll_area, 1)
         
-        # Bottom buttons
-        bottom_layout = QHBoxLayout()
-        bottom_layout.setSpacing(20)
-
-        bottom_layout.addStretch()
-        
-        # Start button
-        self.start_btn = QPushButton("Commencer ➔")
-        self.start_btn.setFont(QFont("Segoe UI", 17, QFont.Weight.Bold))
-        self.start_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2563eb;
-                color: #ffffff;
-                border: none;
-                border-radius: 12px;
-                padding: 16px 36px;
-            }
-            QPushButton:hover {
-                background-color: #1d4ed8;
-            }
-            QPushButton:disabled {
-                background-color: #94a3b8;
-            }
-        """)
-        self.start_btn.setEnabled(False)
-        self.start_btn.clicked.connect(self.on_start_clicked)
-        bottom_layout.addWidget(self.start_btn)
-        
-        layout.addLayout(bottom_layout)
-        
         self.setLayout(layout)
         self.setStyleSheet("background-color: #f8fafc;")
     
@@ -168,41 +140,46 @@ class HomeScreen(QWidget):
             if item.widget():
                 item.widget().deleteLater()
         
-        # Add "No Frame" option
-        no_frame_btn = self.create_frame_button(None, "Sans Cadre")
-        self.frame_buttons = [no_frame_btn]
-        self.frames_layout.addWidget(no_frame_btn, 0, 0)
+        self.frame_buttons = []
+
+        # Build frame option list
+        frame_options = []
+        if self.show_no_frame_option:
+            frame_options.append(None)
         
         # Load frames from directory
         if os.path.exists(frames_dir):
             frame_files = [f for f in os.listdir(frames_dir) 
                           if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-            
-            for i, frame_file in enumerate(frame_files, start=1):
+            frame_files.sort()
+
+            for frame_file in frame_files:
                 frame_path = os.path.join(frames_dir, frame_file)
-                frame_btn = self.create_frame_button(frame_path, os.path.splitext(frame_file)[0])
+                frame_options.append(frame_path)
+
+        # Render options in grid
+        for i, frame_path in enumerate(frame_options):
+                frame_btn = self.create_frame_button(frame_path)
                 self.frame_buttons.append(frame_btn)
                 row = i // 3
                 col = i % 3
                 self.frames_layout.addWidget(frame_btn, row, col)
     
-    def create_frame_button(self, frame_path, name):
+    def create_frame_button(self, frame_path):
         """Create a button for a frame.
         
         Args:
             frame_path: Path to frame image (None for no frame)
-            name: Display name
-            
         Returns:
             QPushButton for the frame
         """
         btn = QPushButton()
-        btn.setFixedSize(250, 250)
+        btn.setFixedSize(300, 300)
         btn.setStyleSheet("""
             QPushButton {
                 background-color: #ffffff;
                 border: 2px solid #cbd5e1;
-                border-radius: 14px;
+                border-radius: 18px;
             }
             QPushButton:hover {
                 border-color: #3b82f6;
@@ -221,25 +198,18 @@ class HomeScreen(QWidget):
         # Image preview
         if frame_path and os.path.exists(frame_path):
             pixmap = QPixmap(frame_path)
-            pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, 
+            pixmap = pixmap.scaled(270, 270, Qt.AspectRatioMode.KeepAspectRatio, 
                                   Qt.TransformationMode.SmoothTransformation)
             img_label = QLabel()
             img_label.setPixmap(pixmap)
             img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(img_label)
         else:
-            placeholder = QLabel("📷")
-            placeholder.setFont(QFont("Segoe UI", 56, QFont.Weight.Bold))
+            placeholder = QLabel("🚫")
+            placeholder.setFont(QFont("Segoe UI", 72, QFont.Weight.Bold))
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             placeholder.setStyleSheet("color: #2563eb;")
             layout.addWidget(placeholder)
-        
-        # Name label
-        name_label = QLabel(name)
-        name_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Medium))
-        name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        name_label.setStyleSheet("color: #0f172a;")
-        layout.addWidget(name_label)
         
         btn.setLayout(layout)
         btn.clicked.connect(lambda: self.on_frame_selected(frame_path, btn))
@@ -259,21 +229,23 @@ class HomeScreen(QWidget):
                 frame_button.setChecked(False)
         
         self.selected_frame = frame_path if frame_path else ""
-        self.start_btn.setEnabled(True)
-    
-    def on_start_clicked(self):
-        """Handle start button click."""
-        if self.start_btn.isEnabled():
-            self.frame_selected.emit(self.selected_frame)
+        self.frame_selected.emit(self.selected_frame)
 
-    def set_home_texts(self, title: str, subtitle: str, start_button_text: str):
+    def set_home_texts(self, title: str, subtitle: str, start_button_text: str = ""):
         """Set configurable home texts.
 
         Args:
             title: Main title text
             subtitle: Subtitle text
-            start_button_text: Start button label
+            start_button_text: Unused legacy argument kept for compatibility
         """
         self.title_label.setText(title or "Bienvenue au Photobooth!")
         self.subtitle_label.setText(subtitle or "Choisissez votre cadre préféré")
-        self.start_btn.setText(start_button_text or "Commencer ➔")
+
+    def set_frames_options(self, show_no_frame_option: bool):
+        """Set frame-list display options.
+
+        Args:
+            show_no_frame_option: Whether to display the no-frame option
+        """
+        self.show_no_frame_option = bool(show_no_frame_option)

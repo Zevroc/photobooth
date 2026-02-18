@@ -221,6 +221,11 @@ class AdminScreen(QWidget):
         dir_layout.addWidget(browse_btn)
         
         layout.addLayout(dir_layout)
+
+        self.show_no_frame_option_check = QCheckBox("Afficher l'option Sans cadre")
+        self.show_no_frame_option_check.setChecked(self.config.show_no_frame_option)
+        layout.addWidget(self.show_no_frame_option_check)
+
         layout.addStretch()
         
         widget.setLayout(layout)
@@ -238,9 +243,6 @@ class AdminScreen(QWidget):
 
         self.home_subtitle_edit = QLineEdit(self.config.home_subtitle)
         layout.addRow("Sous-titre accueil:", self.home_subtitle_edit)
-
-        self.home_start_button_edit = QLineEdit(self.config.home_start_button_text)
-        layout.addRow("Texte bouton démarrer:", self.home_start_button_edit)
 
         self.start_fullscreen_check = QCheckBox("Démarrer en plein écran")
         self.start_fullscreen_check.setChecked(self.config.start_fullscreen)
@@ -377,8 +379,8 @@ class AdminScreen(QWidget):
         # Update home screen text config
         self.config.home_title = self.home_title_edit.text().strip() or "Bienvenue au Photobooth!"
         self.config.home_subtitle = self.home_subtitle_edit.text().strip() or "Choisissez votre cadre préféré"
-        self.config.home_start_button_text = self.home_start_button_edit.text().strip() or "Commencer ➔"
         self.config.start_fullscreen = self.start_fullscreen_check.isChecked()
+        self.config.show_no_frame_option = self.show_no_frame_option_check.isChecked()
         
         # Save to file
         self.config.save()

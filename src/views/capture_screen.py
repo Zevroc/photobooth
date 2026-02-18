@@ -52,7 +52,7 @@ class CaptureScreen(QWidget):
         self.preview_label = QLabel()
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setStyleSheet("""
-            background-color: #34495e;
+            background-color: #0f172a;
             border: 2px solid #1e293b;
             border-radius: 14px;
         """)
@@ -67,7 +67,7 @@ class CaptureScreen(QWidget):
         self.countdown_label.hide()
 
         # Capture button (bottom-center overlay)
-        self.capture_btn = QPushButton("📷\nPrendre\nla photo")
+        self.capture_btn = QPushButton("📸")
         self.capture_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.capture_btn.clicked.connect(self.start_countdown)
         self.update_capture_button_style(185)
@@ -121,27 +121,43 @@ class CaptureScreen(QWidget):
         Args:
             diameter: Button diameter in pixels
         """
-        diameter = max(140, min(220, int(diameter)))
+        diameter = max(150, min(240, int(diameter)))
         radius = diameter // 2
-        border_width = max(4, diameter // 36)
-        font_size = max(13, diameter // 13)
+        border_width = max(5, diameter // 30)
+        font_size = max(40, diameter // 3)
 
         self.capture_btn.setFixedSize(diameter, diameter)
-        self.capture_btn.setFont(QFont("Segoe UI", font_size, QFont.Weight.Bold))
+        self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
         self.capture_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #2563eb;
+                background-color: qlineargradient(
+                    x1: 0, y1: 0,
+                    x2: 1, y2: 1,
+                    stop: 0 #3b82f6,
+                    stop: 1 #1d4ed8
+                );
                 color: #ffffff;
-                border: {border_width}px solid #e2e8f0;
+                border: {border_width}px solid #dbeafe;
                 border-radius: {radius}px;
-                padding: 8px;
+                padding: 0px;
             }}
             QPushButton:hover {{
-                background-color: #1d4ed8;
+                background-color: qlineargradient(
+                    x1: 0, y1: 0,
+                    x2: 1, y2: 1,
+                    stop: 0 #60a5fa,
+                    stop: 1 #2563eb
+                );
+                border: {border_width}px solid #bfdbfe;
+            }}
+            QPushButton:pressed {{
+                background-color: #1e40af;
+                border: {border_width}px solid #93c5fd;
             }}
             QPushButton:disabled {{
                 background-color: #94a3b8;
                 color: #e2e8f0;
+                border: {border_width}px solid #cbd5e1;
             }}
         """)
 
@@ -198,7 +214,7 @@ class CaptureScreen(QWidget):
                     display_frame = frame
 
             self.preview_label.setStyleSheet("""
-                background-color: #34495e;
+                background-color: #0f172a;
                 border: 2px solid #1e293b;
                 border-radius: 14px;
             """)
@@ -211,9 +227,17 @@ class CaptureScreen(QWidget):
             pixmap = QPixmap.fromImage(q_image)
             scaled_pixmap = pixmap.scaled(
                 self.preview_label.size(),
-                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                 Qt.TransformationMode.SmoothTransformation
             )
+
+            # Center-crop to fully cover preview area
+            target_width = max(1, self.preview_label.width())
+            target_height = max(1, self.preview_label.height())
+            if scaled_pixmap.width() > target_width or scaled_pixmap.height() > target_height:
+                x = max(0, (scaled_pixmap.width() - target_width) // 2)
+                y = max(0, (scaled_pixmap.height() - target_height) // 2)
+                scaled_pixmap = scaled_pixmap.copy(x, y, target_width, target_height)
 
             if self.is_capturing:
                 painter = QPainter(scaled_pixmap)
