@@ -2,6 +2,22 @@
 
 Ce guide explique comment compiler l'application Photobooth en un fichier exécutable Windows (.exe).
 
+## ⚡ Démarrage Ultra-Rapide (Windows)
+
+Pour les utilisateurs Windows, le moyen le plus simple est de double-cliquer sur :
+
+**`build.bat`**
+
+Ce script automatique va :
+1. Vérifier que Python est installé
+2. Installer toutes les dépendances nécessaires
+3. Compiler l'application
+4. Créer l'exécutable dans `dist/Photobooth/Photobooth.exe`
+
+Puis distribuez le dossier complet `dist/Photobooth/` !
+
+---
+
 ## 📋 Prérequis
 
 - Python 3.8 ou supérieur installé

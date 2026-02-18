@@ -10,6 +10,7 @@ a = Analysis(
         ('assets', 'assets'),
         ('config', 'config'),
         ('src', 'src'),
+        ('DISTRIBUTION_README.md', '.'),
     ],
     hiddenimports=[
         'PyQt6.QtCore',
