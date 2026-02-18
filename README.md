@@ -114,8 +114,11 @@ python main.py
 Pour créer un fichier exécutable Windows (.exe) :
 
 ```bash
-# Installer les dépendances de build
+# Installer les dépendances de l'application
 pip install -r requirements.txt
+
+# Installer les dépendances de build
+pip install -r requirements-build.txt
 
 # Compiler l'application
 python build.py

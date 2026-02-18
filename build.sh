@@ -14,17 +14,18 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-echo "Step 1/3: Installing build dependencies..."
+echo "Step 1/2: Installing dependencies..."
 echo ""
 python3 -m pip install --upgrade pip
 python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-build.txt
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install dependencies"
     exit 1
 fi
 echo ""
 
-echo "Step 2/3: Building executable..."
+echo "Step 2/2: Building executable..."
 echo ""
 python3 build.py
 if [ $? -ne 0 ]; then
@@ -33,7 +34,8 @@ if [ $? -ne 0 ]; then
 fi
 echo ""
 
-echo "Step 3/3: Build complete!"
+echo "================================================================"
+echo "Build complete!"
 echo ""
 echo "================================================================"
 echo "The executable is ready in: dist/Photobooth/Photobooth"

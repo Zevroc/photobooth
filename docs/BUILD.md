@@ -22,7 +22,7 @@ Puis distribuez le dossier complet `dist/Photobooth/` !
 
 - Python 3.8 ou supérieur installé
 - Toutes les dépendances de l'application installées
-- PyInstaller (installé automatiquement avec les requirements)
+- PyInstaller (installé via requirements-build.txt)
 
 ## 🚀 Compilation Rapide
 
@@ -31,10 +31,13 @@ Puis distribuez le dossier complet `dist/Photobooth/` !
 Le moyen le plus simple de compiler l'application est d'utiliser le script de build fourni :
 
 ```bash
-# 1. Installer les dépendances de build
+# 1. Installer les dépendances de l'application
 pip install -r requirements.txt
 
-# 2. Exécuter le script de build
+# 2. Installer les dépendances de build
+pip install -r requirements-build.txt
+
+# 3. Exécuter le script de build
 python build.py
 ```
 
@@ -43,6 +46,8 @@ Le script va :
 - ✓ Nettoyer les builds précédents
 - ✓ Compiler l'application
 - ✓ Vérifier que l'exécutable a été créé avec succès
+
+**Note:** Le script build.py suppose que PyInstaller est déjà installé. Si ce n'est pas le cas, il vous le signalera et vous pourrez l'installer avec `pip install -r requirements-build.txt`.
 
 ### Méthode 2 : Compilation Manuelle avec PyInstaller
 

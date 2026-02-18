@@ -9,6 +9,8 @@ a = Analysis(
     datas=[
         ('assets', 'assets'),
         ('config', 'config'),
+        # Note: Including 'src' as data files to preserve package structure
+        # This ensures dynamic imports and resource loading work correctly
         ('src', 'src'),
         ('DISTRIBUTION_README.md', '.'),
     ],

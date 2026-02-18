@@ -66,7 +66,12 @@ def verify_build():
     """Verify that the executable was created."""
     print("🔍 Verifying build output...")
     
-    exe_path = os.path.join('dist', 'Photobooth', 'Photobooth.exe')
+    import platform
+    
+    # Determine executable extension based on platform
+    exe_extension = '.exe' if platform.system() == 'Windows' else ''
+    exe_name = f'Photobooth{exe_extension}'
+    exe_path = os.path.join('dist', 'Photobooth', exe_name)
     
     if os.path.exists(exe_path):
         size_mb = os.path.getsize(exe_path) / (1024 * 1024)

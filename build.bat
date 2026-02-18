@@ -16,10 +16,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo Step 1/3: Installing build dependencies...
+echo Step 1/2: Installing dependencies...
 echo.
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -r requirements-build.txt
 if %errorlevel% neq 0 (
     echo ERROR: Failed to install dependencies
     pause
@@ -27,7 +28,7 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-echo Step 2/3: Building executable...
+echo Step 2/2: Building executable...
 echo.
 python build.py
 if %errorlevel% neq 0 (
@@ -37,7 +38,8 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-echo Step 3/3: Build complete!
+echo ================================================================
+echo Build complete!
 echo.
 echo ================================================================
 echo The executable is ready in: dist\Photobooth\Photobooth.exe
