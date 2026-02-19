@@ -15,7 +15,9 @@ class CaptureScreen(QWidget):
     """Screen for capturing photos with countdown."""
     
     photo_captured = pyqtSignal(Photo)  # Signal when photo is captured
-    back_requested = pyqtSignal()       # Signal to go back
+    frame_picker_requested = pyqtSignal()  # Signal to open frame picker
+    gallery_requested = pyqtSignal()       # Signal to open gallery
+    admin_requested = pyqtSignal()         # Signal to open admin
     
     def __init__(self, camera_controller: CameraController, photo_controller: PhotoController):
         super().__init__()
@@ -38,15 +40,8 @@ class CaptureScreen(QWidget):
     def init_ui(self):
         """Initialize the user interface."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
-        
-        # Title
-        self.title = QLabel("Préparez-vous!")
-        self.title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
-        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title.setStyleSheet("color: #0f172a; margin-bottom: 12px;")
-        layout.addWidget(self.title)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
         # Camera preview
         self.preview_label = QLabel()
@@ -56,7 +51,7 @@ class CaptureScreen(QWidget):
             border: 2px solid #1e293b;
             border-radius: 14px;
         """)
-        self.preview_label.setMinimumSize(800, 600)
+        self.preview_label.setMinimumSize(1024, 768)
         layout.addWidget(self.preview_label, 1)
         
         # Countdown label
@@ -71,49 +66,83 @@ class CaptureScreen(QWidget):
         self.capture_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.capture_btn.clicked.connect(self.start_countdown)
         self.update_capture_button_style(185)
+
+        # Secondary buttons
+        self.choose_frame_btn = QPushButton("Choisis ton cadre")
+        self.choose_frame_btn.clicked.connect(self.frame_picker_requested.emit)
+
+        self.gallery_btn = QPushButton("Galerie")
+        self.gallery_btn.clicked.connect(self.gallery_requested.emit)
+
+        # Hidden admin hotspot (top-right)
+        self.admin_hotspot_btn = QPushButton("")
+        self.admin_hotspot_btn.setToolTip("Administration")
+        self.admin_hotspot_btn.setFixedSize(90, 90)
+        self.admin_hotspot_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.admin_hotspot_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: rgba(15, 23, 42, 22);
+                border-radius: 12px;
+            }
+        """)
+        self.admin_hotspot_btn.clicked.connect(self.admin_requested.emit)
+
+        self._style_secondary_buttons()
         
         # Place countdown on top of preview
         overlay_layout = QVBoxLayout()
-        overlay_layout.setContentsMargins(20, 20, 20, 20)
+        overlay_layout.setContentsMargins(16, 16, 16, 18)
+
+        top_hotspot_layout = QHBoxLayout()
+        top_hotspot_layout.addStretch()
+        top_hotspot_layout.addWidget(self.admin_hotspot_btn)
+        overlay_layout.addLayout(top_hotspot_layout)
+
         overlay_layout.addWidget(self.countdown_label, 0, Qt.AlignmentFlag.AlignCenter)
         overlay_layout.addStretch()
 
-        capture_layout = QHBoxLayout()
-        capture_layout.addStretch()
-        capture_layout.addWidget(self.capture_btn)
-        capture_layout.addStretch()
-        overlay_layout.addLayout(capture_layout)
+        bottom_buttons_layout = QHBoxLayout()
+        bottom_buttons_layout.setSpacing(26)
+        bottom_buttons_layout.addStretch()
+        bottom_buttons_layout.addWidget(self.choose_frame_btn, 0, Qt.AlignmentFlag.AlignBottom)
+        bottom_buttons_layout.addWidget(self.capture_btn, 0, Qt.AlignmentFlag.AlignBottom)
+        bottom_buttons_layout.addWidget(self.gallery_btn, 0, Qt.AlignmentFlag.AlignBottom)
+        bottom_buttons_layout.addStretch()
+        overlay_layout.addLayout(bottom_buttons_layout)
 
         self.preview_label.setLayout(overlay_layout)
         
-        # Buttons
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(20)
-        
-        # Back button
-        back_btn = QPushButton("← Retour")
-        back_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
-        back_btn.setStyleSheet("""
+        self.setLayout(layout)
+        self.setStyleSheet("background-color: #0f172a;")
+
+    def _style_secondary_buttons(self):
+        """Apply style to secondary bottom buttons."""
+        style = """
             QPushButton {
-                background-color: #1e293b;
+                background-color: rgba(15, 23, 42, 210);
                 color: #f8fafc;
-                border: none;
-                border-radius: 12px;
-                padding: 14px 24px;
+                border: 2px solid rgba(148, 163, 184, 170);
+                border-radius: 16px;
+                padding: 12px 18px;
+                font-size: 18px;
+                font-weight: 700;
             }
             QPushButton:hover {
-                background-color: #334155;
+                background-color: rgba(30, 41, 59, 230);
+                border-color: #60a5fa;
             }
-        """)
-        back_btn.clicked.connect(self.on_back_clicked)
-        button_layout.addWidget(back_btn)
-        
-        button_layout.addStretch()
-        
-        layout.addLayout(button_layout)
-        
-        self.setLayout(layout)
-        self.setStyleSheet("background-color: #f8fafc;")
+            QPushButton:pressed {
+                background-color: rgba(15, 23, 42, 255);
+            }
+        """
+        self.choose_frame_btn.setFixedSize(220, 76)
+        self.gallery_btn.setFixedSize(220, 76)
+        self.choose_frame_btn.setStyleSheet(style)
+        self.gallery_btn.setStyleSheet(style)
 
     def update_capture_button_style(self, diameter: int):
         """Update round capture button size and style.
@@ -167,7 +196,7 @@ class CaptureScreen(QWidget):
         ref_size = min(self.preview_label.width(), self.preview_label.height())
         if ref_size <= 0:
             return
-        target_diameter = int(ref_size * 0.23)
+        target_diameter = int(ref_size * 0.24)
         self.update_capture_button_style(target_diameter)
     
     def set_frame(self, frame_path: str):
@@ -183,11 +212,9 @@ class CaptureScreen(QWidget):
         """Start the camera preview."""
         if not self.camera.is_active:
             if self.camera.start():
-                self.title.setText("Préparez-vous!")
                 self.timer.start(30)  # Update at ~30 FPS
             else:
                 self.capture_btn.setEnabled(False)
-                self.title.setText("Caméra indisponible")
                 self.preview_label.setText("Impossible d'ouvrir la caméra.\nVérifiez la configuration dans Administration.")
                 self.preview_label.setStyleSheet("""
                     background-color: #0f172a;
@@ -228,9 +255,17 @@ class CaptureScreen(QWidget):
             pixmap = QPixmap.fromImage(q_image)
             scaled_pixmap = pixmap.scaled(
                 self.preview_label.size(),
-                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                 Qt.TransformationMode.SmoothTransformation
             )
+
+            # Center-crop to fill the whole preview area
+            target_width = max(1, self.preview_label.width())
+            target_height = max(1, self.preview_label.height())
+            if scaled_pixmap.width() > target_width or scaled_pixmap.height() > target_height:
+                x = max(0, (scaled_pixmap.width() - target_width) // 2)
+                y = max(0, (scaled_pixmap.height() - target_height) // 2)
+                scaled_pixmap = scaled_pixmap.copy(x, y, target_width, target_height)
 
             if self.is_capturing:
                 painter = QPainter(scaled_pixmap)
@@ -294,11 +329,6 @@ class CaptureScreen(QWidget):
         # Reset UI
         self.capture_btn.setEnabled(True)
         self.is_capturing = False
-    
-    def on_back_clicked(self):
-        """Handle back button click."""
-        self.stop_camera()
-        self.back_requested.emit()
     
     def showEvent(self, event):
         """Handle show event."""

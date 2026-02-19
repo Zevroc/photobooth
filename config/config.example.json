@@ -32,5 +32,6 @@
     "home_subtitle": "Choisissez votre cadre préféré",
     "home_start_button_text": "Commencer ➔",
     "start_fullscreen": true,
-    "show_no_frame_option": true
+    "show_no_frame_option": true,
+    "last_selected_frame": ""
 }

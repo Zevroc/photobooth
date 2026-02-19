@@ -58,6 +58,7 @@ class AppConfig:
     home_start_button_text: str = "Commencer ➔"
     start_fullscreen: bool = True
     show_no_frame_option: bool = True
+    last_selected_frame: str = ""
     
     @classmethod
     def load(cls, config_path: str = "config/config.json") -> "AppConfig":
@@ -77,7 +78,8 @@ class AppConfig:
                     home_subtitle=data.get('home_subtitle', 'Choisissez votre cadre préféré'),
                     home_start_button_text=data.get('home_start_button_text', 'Commencer ➔'),
                     start_fullscreen=data.get('start_fullscreen', True),
-                    show_no_frame_option=data.get('show_no_frame_option', True)
+                    show_no_frame_option=data.get('show_no_frame_option', True),
+                    last_selected_frame=data.get('last_selected_frame', '')
                 )
         else:
             # Return default configuration
@@ -93,7 +95,8 @@ class AppConfig:
                 home_subtitle='Choisissez votre cadre préféré',
                 home_start_button_text='Commencer ➔',
                 start_fullscreen=True,
-                show_no_frame_option=True
+                show_no_frame_option=True,
+                last_selected_frame=''
             )
     
     def save(self, config_path: str = "config/config.json") -> None:
@@ -112,5 +115,6 @@ class AppConfig:
                 'home_subtitle': self.home_subtitle,
                 'home_start_button_text': self.home_start_button_text,
                 'start_fullscreen': self.start_fullscreen,
-                'show_no_frame_option': self.show_no_frame_option
+                'show_no_frame_option': self.show_no_frame_option,
+                'last_selected_frame': self.last_selected_frame
             }, f, indent=4)

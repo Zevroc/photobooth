@@ -13,6 +13,7 @@ from src.controllers.printer_controller import PrinterController
 
 from src.views.home_screen import HomeScreen
 from src.views.capture_screen import CaptureScreen
+from src.views.gallery_screen import GalleryScreen
 from src.views.preview_screen import PreviewScreen
 from src.views.admin_screen import AdminScreen
 
@@ -122,12 +123,14 @@ class PhotoboothApp(QMainWindow):
         # Create screens
         self.home_screen = HomeScreen()
         self.capture_screen = CaptureScreen(self.camera_controller, self.photo_controller)
+        self.gallery_screen = GalleryScreen()
         self.preview_screen = PreviewScreen()
         self.admin_screen = AdminScreen(self.config)
         
         # Add screens to stack
         self.stacked_widget.addWidget(self.home_screen)
         self.stacked_widget.addWidget(self.capture_screen)
+        self.stacked_widget.addWidget(self.gallery_screen)
         self.stacked_widget.addWidget(self.preview_screen)
         self.stacked_widget.addWidget(self.admin_screen)
         
@@ -136,12 +139,16 @@ class PhotoboothApp(QMainWindow):
         self.home_screen.admin_requested.connect(self.show_admin)
         
         self.capture_screen.photo_captured.connect(self.on_photo_captured)
-        self.capture_screen.back_requested.connect(self.show_home)
+        self.capture_screen.frame_picker_requested.connect(self.show_home)
+        self.capture_screen.gallery_requested.connect(self.show_gallery)
+        self.capture_screen.admin_requested.connect(self.show_admin)
+
+        self.gallery_screen.back_requested.connect(self.show_capture)
         
         self.preview_screen.retake_requested.connect(self.show_capture)
-        self.preview_screen.done.connect(self.show_home)
+        self.preview_screen.done.connect(self.show_capture)
         
-        self.admin_screen.back_requested.connect(self.show_home)
+        self.admin_screen.back_requested.connect(self.show_capture)
         self.admin_screen.config_saved.connect(self.on_config_saved)
         
         # Load frames in home screen
@@ -152,14 +159,21 @@ class PhotoboothApp(QMainWindow):
             self.config.home_subtitle,
             self.config.home_start_button_text
         )
+
+        # Restore last selected frame
+        frame_path = self.config.last_selected_frame
+        if frame_path and not os.path.exists(frame_path):
+            frame_path = ""
+        self.capture_screen.set_frame(frame_path)
+
         self.preview_screen.set_enabled_actions(
             self.config.email.enabled,
             self.config.onedrive.enabled,
             self.config.printer.enabled
         )
         
-        # Show home screen
-        self.show_home()
+        # Show capture screen directly
+        self.show_capture()
 
         # Start window mode from configuration
         if self.config.start_fullscreen:
@@ -172,6 +186,11 @@ class PhotoboothApp(QMainWindow):
     def show_capture(self):
         """Show capture screen."""
         self.stacked_widget.setCurrentWidget(self.capture_screen)
+
+    def show_gallery(self):
+        """Show gallery screen."""
+        self.gallery_screen.load_photos(self.config.photos_directory)
+        self.stacked_widget.setCurrentWidget(self.gallery_screen)
     
     def show_preview(self):
         """Show preview screen."""
@@ -188,6 +207,8 @@ class PhotoboothApp(QMainWindow):
             frame_path: Path to selected frame
         """
         self.capture_screen.set_frame(frame_path)
+        self.config.last_selected_frame = frame_path or ""
+        self.config.save()
         self.show_capture()
     
     def on_photo_captured(self, photo):
@@ -252,6 +273,12 @@ class PhotoboothApp(QMainWindow):
             self.config.home_start_button_text
         )
         self.home_screen.set_frames_options(self.config.show_no_frame_option)
+
+        frame_path = self.config.last_selected_frame
+        if frame_path and not os.path.exists(frame_path):
+            frame_path = ""
+        self.capture_screen.set_frame(frame_path)
+
         self.preview_screen.set_enabled_actions(
             self.config.email.enabled,
             self.config.onedrive.enabled,
