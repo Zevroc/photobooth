@@ -121,10 +121,10 @@ class CaptureScreen(QWidget):
         Args:
             diameter: Button diameter in pixels
         """
-        diameter = max(150, min(240, int(diameter)))
+        diameter = max(180, min(280, int(diameter)))
         radius = diameter // 2
         border_width = max(5, diameter // 30)
-        font_size = max(54, diameter // 2)
+        font_size = max(72, int(diameter * 0.62))
 
         self.capture_btn.setFixedSize(diameter, diameter)
         self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
@@ -139,6 +139,7 @@ class CaptureScreen(QWidget):
                 color: #ffffff;
                 border: {border_width}px solid #dbeafe;
                 border-radius: {radius}px;
+                font-size: {font_size}px;
                 padding: 0px;
             }}
             QPushButton:hover {{
