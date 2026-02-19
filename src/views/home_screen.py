@@ -33,14 +33,14 @@ class HomeScreen(QWidget):
         admin_btn = QPushButton("⚙")
         admin_btn.setFixedSize(56, 56)
         admin_btn.setToolTip("Administration")
-        admin_btn.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
+        admin_btn.setFont(QFont("Segoe UI", 36, QFont.Weight.Bold))
         admin_btn.setStyleSheet("""
             QPushButton {
                 background-color: #1e293b;
                 color: #f8fafc;
                 border: none;
                 border-radius: 28px;
-                padding: 0px 0px 4px 0px;
+                padding: 0px 0px 6px 0px;
             }
             QPushButton:hover {
                 background-color: #334155;

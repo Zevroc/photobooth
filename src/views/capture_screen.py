@@ -124,7 +124,7 @@ class CaptureScreen(QWidget):
         diameter = max(150, min(240, int(diameter)))
         radius = diameter // 2
         border_width = max(5, diameter // 30)
-        font_size = max(40, diameter // 3)
+        font_size = max(54, diameter // 2)
 
         self.capture_btn.setFixedSize(diameter, diameter)
         self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
@@ -227,17 +227,9 @@ class CaptureScreen(QWidget):
             pixmap = QPixmap.fromImage(q_image)
             scaled_pixmap = pixmap.scaled(
                 self.preview_label.size(),
-                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             )
-
-            # Center-crop to fully cover preview area
-            target_width = max(1, self.preview_label.width())
-            target_height = max(1, self.preview_label.height())
-            if scaled_pixmap.width() > target_width or scaled_pixmap.height() > target_height:
-                x = max(0, (scaled_pixmap.width() - target_width) // 2)
-                y = max(0, (scaled_pixmap.height() - target_height) // 2)
-                scaled_pixmap = scaled_pixmap.copy(x, y, target_width, target_height)
 
             if self.is_capturing:
                 painter = QPainter(scaled_pixmap)
