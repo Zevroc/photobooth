@@ -1,4 +1,5 @@
 """Capture screen for taking photos with countdown."""
+import os
 import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
@@ -62,17 +63,25 @@ class CaptureScreen(QWidget):
         self.countdown_label.hide()
 
         # Capture button (bottom-center overlay)
-        self.capture_btn = QPushButton("📸")
+        self.capture_btn = QPushButton("")
         self.capture_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.capture_btn.clicked.connect(self.start_countdown)
         self.update_capture_button_style(185)
 
         # Secondary buttons
-        self.choose_frame_btn = QPushButton("Choisis ton cadre")
+        self.choose_frame_btn = QPushButton("")
         self.choose_frame_btn.clicked.connect(self.frame_picker_requested.emit)
 
-        self.gallery_btn = QPushButton("Galerie")
+        self.gallery_btn = QPushButton("")
         self.gallery_btn.clicked.connect(self.gallery_requested.emit)
+
+        self.choose_frame_btn.setObjectName("chooseFrameBtn")
+        self.capture_btn.setObjectName("captureBtn")
+        self.gallery_btn.setObjectName("galleryBtn")
+
+        self.choose_frame_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.capture_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.gallery_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Hidden admin hotspot (top-right)
         self.admin_hotspot_btn = QPushButton("")
@@ -92,6 +101,7 @@ class CaptureScreen(QWidget):
         self.admin_hotspot_btn.clicked.connect(self.admin_requested.emit)
 
         self._style_secondary_buttons()
+        self._apply_image_button_styles()
         
         # Place countdown on top of preview
         overlay_layout = QVBoxLayout()
@@ -121,7 +131,47 @@ class CaptureScreen(QWidget):
 
     def _style_secondary_buttons(self):
         """Apply style to secondary bottom buttons."""
-        style = """
+        self.choose_frame_btn.setFixedSize(220, 76)
+        self.gallery_btn.setFixedSize(220, 76)
+
+    def _assets_path(self, filename: str) -> str:
+        """Build absolute path for button assets.
+
+        Args:
+            filename: Image filename in assets/buttons
+
+        Returns:
+            Absolute path
+        """
+        return os.path.abspath(os.path.join("assets", "buttons", filename)).replace("\\", "/")
+
+    def _set_button_image_style(self, button: QPushButton, normal_file: str, pressed_file: str, fallback_text: str):
+        """Set image-based style for a button using normal/pressed assets."""
+        normal_path = self._assets_path(normal_file)
+        pressed_path = self._assets_path(pressed_file)
+
+        if os.path.exists(normal_path) and os.path.exists(pressed_path):
+            button.setText("")
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    border: none;
+                    background: transparent;
+                    border-image: url({normal_path}) 0 0 0 0 stretch stretch;
+                }}
+                QPushButton:hover {{
+                    border-image: url({normal_path}) 0 0 0 0 stretch stretch;
+                }}
+                QPushButton:pressed {{
+                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
+                }}
+                QPushButton:disabled {{
+                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
+                }}
+            """)
+            return
+
+        button.setText(fallback_text)
+        button.setStyleSheet("""
             QPushButton {
                 background-color: rgba(15, 23, 42, 210);
                 color: #f8fafc;
@@ -138,11 +188,13 @@ class CaptureScreen(QWidget):
             QPushButton:pressed {
                 background-color: rgba(15, 23, 42, 255);
             }
-        """
-        self.choose_frame_btn.setFixedSize(220, 76)
-        self.gallery_btn.setFixedSize(220, 76)
-        self.choose_frame_btn.setStyleSheet(style)
-        self.gallery_btn.setStyleSheet(style)
+        """)
+
+    def _apply_image_button_styles(self):
+        """Apply image-based style for all 3 bottom buttons."""
+        self._set_button_image_style(self.choose_frame_btn, "choose_frame_normal.png", "choose_frame_pressed.png", "Choisis ton cadre")
+        self._set_button_image_style(self.capture_btn, "capture_normal.png", "capture_pressed.png", "📸")
+        self._set_button_image_style(self.gallery_btn, "gallery_normal.png", "gallery_pressed.png", "Galerie")
 
     def update_capture_button_style(self, diameter: int):
         """Update round capture button size and style.
@@ -190,6 +242,7 @@ class CaptureScreen(QWidget):
                 border: {border_width}px solid #cbd5e1;
             }}
         """)
+        self._apply_image_button_styles()
 
     def _adapt_capture_button_size(self):
         """Adapt capture button size to preview area."""
