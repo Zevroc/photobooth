@@ -145,12 +145,33 @@ class CaptureScreen(QWidget):
         """
         return os.path.abspath(os.path.join("assets", "buttons", filename)).replace("\\", "/")
 
-    def _set_button_image_style(self, button: QPushButton, normal_file: str, pressed_file: str, fallback_text: str):
-        """Set image-based style for a button using normal/pressed assets."""
-        normal_path = self._assets_path(normal_file)
-        pressed_path = self._assets_path(pressed_file)
+    def _resolve_existing_asset(self, filenames: list[str]) -> str:
+        """Resolve first existing asset path from candidate file names.
 
-        if os.path.exists(normal_path) and os.path.exists(pressed_path):
+        Args:
+            filenames: Candidate file names in priority order
+
+        Returns:
+            Absolute path of first existing asset or empty string
+        """
+        for filename in filenames:
+            asset_path = self._assets_path(filename)
+            if os.path.exists(asset_path):
+                return asset_path
+        return ""
+
+    def _set_button_image_style(
+        self,
+        button: QPushButton,
+        normal_candidates: list[str],
+        pressed_candidates: list[str],
+        fallback_text: str
+    ):
+        """Set image-based style for a button using normal/pressed assets."""
+        normal_path = self._resolve_existing_asset(normal_candidates)
+        pressed_path = self._resolve_existing_asset(pressed_candidates)
+
+        if normal_path and pressed_path:
             button.setText("")
             button.setStyleSheet(f"""
                 QPushButton {{
@@ -192,9 +213,62 @@ class CaptureScreen(QWidget):
 
     def _apply_image_button_styles(self):
         """Apply image-based style for all 3 bottom buttons."""
-        self._set_button_image_style(self.choose_frame_btn, "choose_frame_normal.png", "choose_frame_pressed.png", "Choisis ton cadre")
-        self._set_button_image_style(self.capture_btn, "capture_normal.png", "capture_pressed.png", "📸")
-        self._set_button_image_style(self.gallery_btn, "gallery_normal.png", "gallery_pressed.png", "Galerie")
+        self._set_button_image_style(
+            self.choose_frame_btn,
+            [
+                "choose_frame_normal.png",
+                "choisis_cadre_normal.png",
+                "choisir_cadre_normal.png",
+                "frame_normal.png",
+                "cadre_normal.png",
+                "choose_frame_unpressed.png"
+            ],
+            [
+                "choose_frame_pressed.png",
+                "choisis_cadre_pressed.png",
+                "choisir_cadre_pressed.png",
+                "frame_pressed.png",
+                "cadre_pressed.png",
+                "choose_frame_down.png"
+            ],
+            "Choisis ton cadre"
+        )
+
+        self._set_button_image_style(
+            self.capture_btn,
+            [
+                "capture_normal.png",
+                "photo_normal.png",
+                "camera_normal.png",
+                "prendre_photo_normal.png",
+                "capture_unpressed.png"
+            ],
+            [
+                "capture_pressed.png",
+                "photo_pressed.png",
+                "camera_pressed.png",
+                "prendre_photo_pressed.png",
+                "capture_down.png"
+            ],
+            "📸"
+        )
+
+        self._set_button_image_style(
+            self.gallery_btn,
+            [
+                "gallery_normal.png",
+                "galerie_normal.png",
+                "gallerie_normal.png",
+                "gallery_unpressed.png"
+            ],
+            [
+                "gallery_pressed.png",
+                "galerie_pressed.png",
+                "gallerie_pressed.png",
+                "gallery_down.png"
+            ],
+            "Galerie"
+        )
 
     def update_capture_button_style(self, diameter: int):
         """Update round capture button size and style.

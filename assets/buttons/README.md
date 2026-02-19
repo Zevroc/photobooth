@@ -1,6 +1,6 @@
 Images des 3 boutons de la page photo.
 
-Fichiers attendus (PNG recommandés avec fond transparent):
+Noms recommandés (prioritaires):
 
 - choose_frame_normal.png
 - choose_frame_pressed.png
@@ -9,8 +9,17 @@ Fichiers attendus (PNG recommandés avec fond transparent):
 - gallery_normal.png
 - gallery_pressed.png
 
-Comportement:
-- état normal: *_normal.png
-- état appuyé: *_pressed.png
+Noms alternatifs supportés aussi:
 
-Remplace simplement ces fichiers pour personnaliser les boutons sans modifier le code.
+- Choix cadre: choose_frame_*.png, choisis_cadre_*.png, choisir_cadre_*.png, frame_*.png, cadre_*.png
+- Capture: capture_*.png, photo_*.png, camera_*.png, prendre_photo_*.png
+- Galerie: gallery_*.png, galerie_*.png, gallerie_*.png
+
+Suffisants reconnus:
+
+- _normal
+- _pressed
+- _unpressed
+- _down (pour l'état pressé)
+
+Remplace simplement les PNG dans ce dossier pour personnaliser les boutons sans modifier le code.
