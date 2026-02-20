@@ -10,6 +10,8 @@ from PyQt6.QtGui import QFont, QImage, QPixmap
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
 from src.controllers.printer_controller import PrinterController
+from src.controllers.email_controller import EmailController
+from src.views.onedrive_setup_wizard import OneDriveSetupWizard
 
 
 class AdminScreen(QWidget):
@@ -254,53 +256,125 @@ class AdminScreen(QWidget):
     def create_onedrive_tab(self):
         """Create OneDrive settings tab."""
         widget = QWidget()
-        layout = QFormLayout()
-        layout.setSpacing(15)
+        layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        form_layout = QFormLayout()
+        form_layout.setSpacing(15)
         
         self.onedrive_enabled = QCheckBox("Activer OneDrive")
         self.onedrive_enabled.setChecked(self.config.onedrive.enabled)
-        layout.addRow("", self.onedrive_enabled)
+        form_layout.addRow("", self.onedrive_enabled)
         
         self.onedrive_client_id = QLineEdit(self.config.onedrive.client_id)
-        layout.addRow("Client ID:", self.onedrive_client_id)
+        form_layout.addRow("Client ID:", self.onedrive_client_id)
         
         self.onedrive_tenant_id = QLineEdit(self.config.onedrive.tenant_id)
-        layout.addRow("Tenant ID:", self.onedrive_tenant_id)
+        form_layout.addRow("Tenant ID:", self.onedrive_tenant_id)
         
         self.onedrive_folder = QLineEdit(self.config.onedrive.folder_path)
-        layout.addRow("Dossier:", self.onedrive_folder)
+        form_layout.addRow("Dossier:", self.onedrive_folder)
+        
+        layout.addLayout(form_layout)
+        
+        # Setup wizard button
+        wizard_btn = QPushButton("🧙 Assistant de configuration")
+        wizard_btn.setFont(QFont("Segoe UI", 11, QFont.Weight.Medium))
+        wizard_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #7c3aed;
+                color: #ffffff;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 18px;
+            }
+            QPushButton:hover {
+                background-color: #6d28d9;
+            }
+        """)
+        wizard_btn.clicked.connect(self.open_onedrive_wizard)
+        layout.addWidget(wizard_btn)
+        
+        layout.addStretch()
         
         widget.setLayout(layout)
         return widget
     
+    def open_onedrive_wizard(self):
+        """Open OneDrive setup wizard."""
+        wizard = OneDriveSetupWizard(
+            self,
+            self.onedrive_client_id.text(),
+            self.onedrive_tenant_id.text()
+        )
+        wizard.config_updated.connect(self.on_onedrive_config_updated)
+        wizard.exec()
+    
+    def on_onedrive_config_updated(self, client_id: str, tenant_id: str):
+        """Handle OneDrive configuration update from wizard."""
+        self.onedrive_client_id.setText(client_id)
+        self.onedrive_tenant_id.setText(tenant_id)
+        QMessageBox.information(
+            self,
+            "✓ Configuration mise à jour",
+            "La configuration OneDrive a été mise à jour.\n"
+            "N'oubliez pas de cliquer sur 'Sauvegarder'."
+        )
+
+    
     def create_email_tab(self):
         """Create email settings tab."""
         widget = QWidget()
-        layout = QFormLayout()
-        layout.setSpacing(15)
+        layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        form_layout = QFormLayout()
+        form_layout.setSpacing(15)
         
         self.email_enabled = QCheckBox("Activer Email")
         self.email_enabled.setChecked(self.config.email.enabled)
-        layout.addRow("", self.email_enabled)
+        form_layout.addRow("", self.email_enabled)
         
         self.email_server = QLineEdit(self.config.email.smtp_server)
-        layout.addRow("Serveur SMTP:", self.email_server)
+        form_layout.addRow("Serveur SMTP:", self.email_server)
         
         self.email_port = QLineEdit(str(self.config.email.smtp_port))
-        layout.addRow("Port:", self.email_port)
+        form_layout.addRow("Port:", self.email_port)
         
         self.email_sender = QLineEdit(self.config.email.sender_email)
-        layout.addRow("Email expéditeur:", self.email_sender)
+        form_layout.addRow("Email expéditeur:", self.email_sender)
         
         self.email_password = QLineEdit(self.config.email.sender_password)
         self.email_password.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addRow("Mot de passe:", self.email_password)
+        form_layout.addRow("Mot de passe:", self.email_password)
         
         self.email_tls = QCheckBox("Utiliser TLS")
         self.email_tls.setChecked(self.config.email.use_tls)
-        layout.addRow("", self.email_tls)
+        form_layout.addRow("", self.email_tls)
+        
+        layout.addLayout(form_layout)
+        
+        # Test button
+        test_btn = QPushButton("🧪 Tester la connexion")
+        test_btn.setFont(QFont("Segoe UI", 11, QFont.Weight.Medium))
+        test_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f59e0b;
+                color: #ffffff;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 18px;
+            }
+            QPushButton:hover {
+                background-color: #d97706;
+            }
+        """)
+        test_btn.clicked.connect(self.test_email_connection)
+        layout.addWidget(test_btn)
+        
+        layout.addStretch()
         
         widget.setLayout(layout)
         return widget
@@ -346,6 +420,44 @@ class AdminScreen(QWidget):
         )
         if dir_path:
             self.frames_dir_edit.setText(dir_path)
+    
+    def test_email_connection(self):
+        """Test email connection with current settings."""
+        # Show a loading message
+        QMessageBox.information(self, "Test Email", "Tentative de connexion...")
+        
+        try:
+            # Create temporary email controller with current settings
+            email_controller = EmailController(
+                smtp_server=self.email_server.text(),
+                smtp_port=int(self.email_port.text() or 587),
+                sender_email=self.email_sender.text(),
+                sender_password=self.email_password.text(),
+                use_tls=self.email_tls.isChecked(),
+                enabled=True
+            )
+            
+            # Test connection
+            success, message = email_controller.test_connection()
+            
+            if success:
+                QMessageBox.information(
+                    self,
+                    "✓ Succès",
+                    message
+                )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "✗ Erreur",
+                    message
+                )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "✗ Erreur",
+                f"Erreur lors du test: {str(e)}"
+            )
     
     def save_config(self):
         """Save configuration."""

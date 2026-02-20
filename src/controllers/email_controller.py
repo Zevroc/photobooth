@@ -36,6 +36,41 @@ class EmailController:
         self.use_tls = use_tls
         self.enabled = enabled
     
+    def test_connection(self) -> tuple[bool, str]:
+        """Test email configuration by sending a test email.
+        
+        Returns:
+            Tuple of (success: bool, message: str) with status and details
+        """
+        if not self.sender_email or not self.sender_password:
+            return False, "Email ou mot de passe non configurés"
+        
+        try:
+            # Create test message
+            msg = MIMEMultipart()
+            msg['From'] = self.sender_email
+            msg['To'] = self.sender_email
+            msg['Subject'] = "Photobooth - Test de configuration"
+            
+            # Add text
+            body = "Ceci est un email de test pour vérifier la configuration du serveur SMTP du Photobooth."
+            msg.attach(MIMEText(body, 'plain'))
+            
+            # Send email
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                if self.use_tls:
+                    server.starttls()
+                server.login(self.sender_email, self.sender_password)
+                server.send_message(msg)
+            
+            return True, "Email de test envoyé avec succès!"
+        except smtplib.SMTPAuthenticationError:
+            return False, "Erreur d'authentification: Vérifiez l'email et le mot de passe"
+        except smtplib.SMTPException as e:
+            return False, f"Erreur SMTP: {str(e)}"
+        except Exception as e:
+            return False, f"Erreur: {str(e)}"
+
     def send_photo(
         self,
         recipient_email: str,
