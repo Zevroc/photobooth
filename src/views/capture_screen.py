@@ -143,7 +143,14 @@ class CaptureScreen(QWidget):
         Returns:
             Absolute path
         """
-        return os.path.abspath(os.path.join("assets", "buttons", filename)).replace("\\", "/")
+        buttons_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "assets", "buttons")
+        )
+
+        if not os.path.exists(buttons_dir):
+            buttons_dir = os.path.abspath(os.path.join("assets", "buttons"))
+
+        return os.path.join(buttons_dir, filename).replace("\\", "/")
 
     def _resolve_existing_asset(self, filenames: list[str]) -> str:
         """Resolve first existing asset path from candidate file names.
@@ -217,6 +224,9 @@ class CaptureScreen(QWidget):
             self.choose_frame_btn,
             [
                 "choose_frame_normal.png",
+                "changer_de_cadre_normal.png",
+                "changer_cadre_normal.png",
+                "changer-le-cadre_normal.png",
                 "choisis_cadre_normal.png",
                 "choisir_cadre_normal.png",
                 "frame_normal.png",
@@ -225,6 +235,9 @@ class CaptureScreen(QWidget):
             ],
             [
                 "choose_frame_pressed.png",
+                "changer_de_cadre_pressed.png",
+                "changer_cadre_pressed.png",
+                "changer-le-cadre_pressed.png",
                 "choisis_cadre_pressed.png",
                 "choisir_cadre_pressed.png",
                 "frame_pressed.png",
@@ -238,6 +251,8 @@ class CaptureScreen(QWidget):
             self.capture_btn,
             [
                 "capture_normal.png",
+                "prendre_une_photo_normal.png",
+                "prendre-une-photo_normal.png",
                 "photo_normal.png",
                 "camera_normal.png",
                 "prendre_photo_normal.png",
@@ -245,6 +260,8 @@ class CaptureScreen(QWidget):
             ],
             [
                 "capture_pressed.png",
+                "prendre_une_photo_pressed.png",
+                "prendre-une-photo_pressed.png",
                 "photo_pressed.png",
                 "camera_pressed.png",
                 "prendre_photo_pressed.png",
@@ -259,12 +276,16 @@ class CaptureScreen(QWidget):
                 "gallery_normal.png",
                 "galerie_normal.png",
                 "gallerie_normal.png",
+                "gallerie_photos_normal.png",
+                "galerie_photos_normal.png",
                 "gallery_unpressed.png"
             ],
             [
                 "gallery_pressed.png",
                 "galerie_pressed.png",
                 "gallerie_pressed.png",
+                "gallerie_photos_pressed.png",
+                "galerie_photos_pressed.png",
                 "gallery_down.png"
             ],
             "Galerie"

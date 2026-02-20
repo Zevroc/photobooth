@@ -47,27 +47,29 @@ class PreviewScreen(QWidget):
         # Action buttons
         actions_layout = QHBoxLayout()
         actions_layout.setSpacing(15)
+        actions_layout.addStretch()
         
         # Email button
-        self.email_btn = QPushButton("📧 Email")
+        self.email_btn = QPushButton("📧 Envoyer par email")
         self.email_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         self.email_btn.setStyleSheet(self._button_style("#3498db"))
         self.email_btn.clicked.connect(self.on_email_clicked)
         actions_layout.addWidget(self.email_btn)
         
         # OneDrive button
-        self.onedrive_btn = QPushButton("☁ OneDrive")
+        self.onedrive_btn = QPushButton("☁ Envoyer sur OneDrive")
         self.onedrive_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         self.onedrive_btn.setStyleSheet(self._button_style("#0078d4"))
         self.onedrive_btn.clicked.connect(self.on_onedrive_clicked)
         actions_layout.addWidget(self.onedrive_btn)
         
         # Print button
-        self.print_btn = QPushButton("🖨 Imprimer")
+        self.print_btn = QPushButton("🖨 Imprimer la photo")
         self.print_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         self.print_btn.setStyleSheet(self._button_style("#9b59b6"))
         self.print_btn.clicked.connect(self.on_print_clicked)
         actions_layout.addWidget(self.print_btn)
+        actions_layout.addStretch()
         
         layout.addLayout(actions_layout)
         self.actions_layout = actions_layout
@@ -77,7 +79,7 @@ class PreviewScreen(QWidget):
         bottom_layout.setSpacing(20)
         
         # Retake button
-        retake_btn = QPushButton("← Reprendre")
+        retake_btn = QPushButton("↺ Reprendre la photo")
         retake_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
         retake_btn.setStyleSheet("""
             QPushButton {
@@ -97,7 +99,7 @@ class PreviewScreen(QWidget):
         bottom_layout.addStretch()
         
         # Done button
-        done_btn = QPushButton("Terminé ✓")
+        done_btn = QPushButton("✅ Valider")
         done_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         done_btn.setStyleSheet("""
             QPushButton {
