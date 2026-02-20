@@ -65,6 +65,7 @@ class AdminScreen(QWidget):
         self.tabs.addTab(self.create_camera_tab(), "📷 Caméra")
         self.tabs.addTab(self.create_home_tab(), "🏠 Accueil")
         self.tabs.addTab(self.create_frames_tab(), "🖼 Cadres")
+        self.tabs.addTab(self.create_buttons_tab(), "🔘 Boutons")
         self.tabs.addTab(self.create_onedrive_tab(), "☁ OneDrive")
         self.tabs.addTab(self.create_email_tab(), "📧 Email")
         self.tabs.addTab(self.create_printer_tab(), "🖨 Imprimante")
@@ -232,6 +233,108 @@ class AdminScreen(QWidget):
         
         widget.setLayout(layout)
         return widget
+
+    def create_buttons_tab(self):
+        """Create custom button images settings tab."""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        info = QLabel("Laissez vide pour utiliser les images par défaut. Formats: PNG, JPG, etc.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        
+        # Capture button
+        self._create_button_selector(
+            layout, "📸 Prendre une photo",
+            "capture_normal", "capture_pressed"
+        )
+        
+        # Choose frame button
+        self._create_button_selector(
+            layout, "🖼 Changer de cadre",
+            "choose_frame_normal", "choose_frame_pressed"
+        )
+        
+        # Gallery button
+        self._create_button_selector(
+            layout, "📷 Galerie",
+            "gallery_normal", "gallery_pressed"
+        )
+        
+        layout.addStretch()
+        widget.setLayout(layout)
+        return widget
+    
+    def _create_button_selector(self, parent_layout: QVBoxLayout, label: str, normal_attr: str, pressed_attr: str):
+        """Create a button image selector pair (normal + pressed).
+        
+        Args:
+            parent_layout: Parent layout to add selector to
+            label: Display label for the button
+            normal_attr: Config attribute for normal state
+            pressed_attr: Config attribute for pressed state
+        """
+        group = QGroupBox(label)
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        
+        # Normal image selector
+        normal_layout = QHBoxLayout()
+        normal_layout.addWidget(QLabel("État normal:"))
+        normal_edit = QLineEdit(getattr(self.config.buttons, normal_attr, ""))
+        normal_edit.setReadOnly(True)
+        normal_edit.setPlaceholderText("Aucune image sélectionnée")
+        normal_layout.addWidget(normal_edit)
+        normal_btn = QPushButton("Parcourir...")
+        normal_btn.clicked.connect(lambda: self._browse_button_image(normal_edit, normal_attr))
+        normal_layout.addWidget(normal_btn)
+        clear_normal = QPushButton("✕")
+        clear_normal.setMaximumWidth(40)
+        clear_normal.clicked.connect(lambda: (normal_edit.setText(""), setattr(self.config.buttons, normal_attr, "")))
+        normal_layout.addWidget(clear_normal)
+        layout.addLayout(normal_layout)
+        
+        # Pressed image selector
+        pressed_layout = QHBoxLayout()
+        pressed_layout.addWidget(QLabel("État pressé:"))
+        pressed_edit = QLineEdit(getattr(self.config.buttons, pressed_attr, ""))
+        pressed_edit.setReadOnly(True)
+        pressed_edit.setPlaceholderText("Aucune image sélectionnée")
+        pressed_layout.addWidget(pressed_edit)
+        pressed_btn = QPushButton("Parcourir...")
+        pressed_btn.clicked.connect(lambda: self._browse_button_image(pressed_edit, pressed_attr))
+        pressed_layout.addWidget(pressed_btn)
+        clear_pressed = QPushButton("✕")
+        clear_pressed.setMaximumWidth(40)
+        clear_pressed.clicked.connect(lambda: (pressed_edit.setText(""), setattr(self.config.buttons, pressed_attr, "")))
+        pressed_layout.addWidget(clear_pressed)
+        layout.addLayout(pressed_layout)
+        
+        group.setLayout(layout)
+        parent_layout.addWidget(group)
+        
+        # Store references for later use
+        setattr(self, f"{normal_attr}_edit", normal_edit)
+        setattr(self, f"{pressed_attr}_edit", pressed_edit)
+    
+    def _browse_button_image(self, line_edit: QLineEdit, config_attr: str):
+        """Browse and select a button image file.
+        
+        Args:
+            line_edit: QLineEdit to update with file path
+            config_attr: Config attribute to update
+        """
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Sélectionner une image pour le bouton",
+            "",
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif);;Tous les fichiers (*)"
+        )
+        if file_path:
+            line_edit.setText(file_path)
+            setattr(self.config.buttons, config_attr, file_path)
 
     def create_home_tab(self):
         """Create home screen text settings tab."""

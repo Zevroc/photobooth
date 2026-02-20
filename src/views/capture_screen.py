@@ -1,6 +1,7 @@
 """Capture screen for taking photos with countdown."""
 import os
 import numpy as np
+from typing import Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QMessageBox
@@ -10,6 +11,7 @@ from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
 from src.models.photo import Photo
+from src.models import ButtonsConfig
 
 
 class CaptureScreen(QWidget):
@@ -20,10 +22,11 @@ class CaptureScreen(QWidget):
     gallery_requested = pyqtSignal()       # Signal to open gallery
     admin_requested = pyqtSignal()         # Signal to open admin
     
-    def __init__(self, camera_controller: CameraController, photo_controller: PhotoController):
+    def __init__(self, camera_controller: CameraController, photo_controller: PhotoController, buttons_config: Optional[ButtonsConfig] = None):
         super().__init__()
         self.camera = camera_controller
         self.photo_controller = photo_controller
+        self.buttons_config = buttons_config or ButtonsConfig()
         self.selected_frame = None
         self.countdown = 0
         self.is_capturing = False
@@ -172,11 +175,29 @@ class CaptureScreen(QWidget):
         button: QPushButton,
         normal_candidates: list[str],
         pressed_candidates: list[str],
-        fallback_text: str
+        fallback_text: str,
+        custom_normal: str = "",
+        custom_pressed: str = ""
     ):
-        """Set image-based style for a button using normal/pressed assets."""
-        normal_path = self._resolve_existing_asset(normal_candidates)
-        pressed_path = self._resolve_existing_asset(pressed_candidates)
+        """Set image-based style for a button using normal/pressed assets.
+        
+        Args:
+            button: The button to style
+            normal_candidates: List of candidate filenames for normal state
+            pressed_candidates: List of candidate filenames for pressed state
+            fallback_text: Text to use if no images found
+            custom_normal: Custom path for normal image (takes priority)
+            custom_pressed: Custom path for pressed image (takes priority)
+        """
+        # Check custom paths first
+        normal_path = custom_normal if custom_normal and os.path.exists(custom_normal) else ""
+        pressed_path = custom_pressed if custom_pressed and os.path.exists(custom_pressed) else ""
+        
+        # Fall back to default candidates
+        if not normal_path:
+            normal_path = self._resolve_existing_asset(normal_candidates)
+        if not pressed_path:
+            pressed_path = self._resolve_existing_asset(pressed_candidates)
 
         if normal_path and pressed_path:
             button.setText("")
@@ -244,7 +265,9 @@ class CaptureScreen(QWidget):
                 "cadre_pressed.png",
                 "choose_frame_down.png"
             ],
-            "Choisis ton cadre"
+            "Choisis ton cadre",
+            custom_normal=self.buttons_config.choose_frame_normal,
+            custom_pressed=self.buttons_config.choose_frame_pressed
         )
 
         self._set_button_image_style(
@@ -267,7 +290,9 @@ class CaptureScreen(QWidget):
                 "prendre_photo_pressed.png",
                 "capture_down.png"
             ],
-            "📸"
+            "📸",
+            custom_normal=self.buttons_config.capture_normal,
+            custom_pressed=self.buttons_config.capture_pressed
         )
 
         self._set_button_image_style(
@@ -288,7 +313,9 @@ class CaptureScreen(QWidget):
                 "galerie_photos_pressed.png",
                 "gallery_down.png"
             ],
-            "Galerie"
+            "Galerie",
+            custom_normal=self.buttons_config.gallery_normal,
+            custom_pressed=self.buttons_config.gallery_pressed
         )
 
     def update_capture_button_style(self, diameter: int):

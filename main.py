@@ -122,7 +122,7 @@ class PhotoboothApp(QMainWindow):
         
         # Create screens
         self.home_screen = HomeScreen()
-        self.capture_screen = CaptureScreen(self.camera_controller, self.photo_controller)
+        self.capture_screen = CaptureScreen(self.camera_controller, self.photo_controller, self.config.buttons)
         self.gallery_screen = GalleryScreen()
         self.preview_screen = PreviewScreen()
         self.admin_screen = AdminScreen(self.config)
@@ -245,6 +245,10 @@ class PhotoboothApp(QMainWindow):
             (self.config.camera.resolution_width, self.config.camera.resolution_height)
         )
         self.capture_screen.camera = self.camera_controller
+        
+        # Update button configuration
+        self.capture_screen.buttons_config = self.config.buttons
+        self.capture_screen._apply_image_button_styles()
 
         # Update service controllers
         self.onedrive_controller = OneDriveController(
