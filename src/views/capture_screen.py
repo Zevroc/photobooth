@@ -12,6 +12,7 @@ from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
 from src.models.photo import Photo
 from src.models import ButtonsConfig
+from src.views.capture_button_overlay import CaptureButtonOverlay
 
 
 class CaptureScreen(QWidget):
@@ -27,8 +28,7 @@ class CaptureScreen(QWidget):
         self.camera = camera_controller
         self.photo_controller = photo_controller
         self.buttons_config = buttons_config or ButtonsConfig()
-        self._miss_capture_pixmaps: Optional[tuple[QPixmap, QPixmap]] = None
-        self._miss_handlers_connected = False
+        self.capture_overlay: Optional[CaptureButtonOverlay] = None
         self.selected_frame = None
         self.countdown = 0
         self.is_capturing = False
@@ -106,6 +106,12 @@ class CaptureScreen(QWidget):
 
         self._style_secondary_buttons()
         self._apply_image_button_styles()
+        
+        # Create Miss overlay (hidden by default) - before calling update_capture_button_style
+        self.capture_overlay = CaptureButtonOverlay(self.preview_label)
+        self.capture_overlay.clicked.connect(self.start_countdown)
+        self.capture_overlay.hide()
+        
         self.update_capture_button_style(185)
         
         # Place countdown on top of preview
@@ -128,6 +134,9 @@ class CaptureScreen(QWidget):
         bottom_buttons_layout.addWidget(self.gallery_btn, 0, Qt.AlignmentFlag.AlignBottom)
         bottom_buttons_layout.addStretch()
         overlay_layout.addLayout(bottom_buttons_layout)
+        
+        # Position overlay on top of capture button (will be positioned dynamically)
+        self._position_capture_overlay()
 
         self.preview_label.setLayout(overlay_layout)
         
@@ -322,99 +331,24 @@ class CaptureScreen(QWidget):
             custom_pressed=self.buttons_config.capture_pressed
         )
 
-    def _build_miss_pixmap(self, diameter: int, pressed: bool = False) -> QPixmap:
-        """Build a generated 'Photobooth Miss' style pixmap for the capture button."""
-        pixmap = QPixmap(diameter, diameter)
-        pixmap.fill(Qt.GlobalColor.transparent)
-
-        painter = QPainter(pixmap)
-        painter.setRenderHints(QPainter.RenderHint.Antialiasing, True)
-
-        center = diameter / 2
-        radius = diameter / 2 - 6
-
-        # Base gradient
-        gradient = QRadialGradient(center, center, radius)
-        if pressed:
-            gradient.setColorAt(0.0, QColor("#2b0f22"))
-            gradient.setColorAt(1.0, QColor("#0a0008"))
-        else:
-            gradient.setColorAt(0.0, QColor("#3a1a2e"))
-            gradient.setColorAt(1.0, QColor("#0a0008"))
-
-        painter.setBrush(gradient)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawEllipse(int(center - radius), int(center - radius), int(radius * 2), int(radius * 2))
-
-        # Gold rim
-        rim_color = QColor("#d4af37")
-        pen = QPen(rim_color, max(2, diameter // 40))
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawEllipse(int(center - radius), int(center - radius), int(radius * 2), int(radius * 2))
-
-        # Camera icon (simple)
-        icon_w = int(diameter * 0.38)
-        icon_h = int(diameter * 0.26)
-        icon_x = int(center - icon_w / 2)
-        icon_y = int(center - icon_h / 2 - diameter * 0.08)
-        painter.setBrush(QColor("#d4af37"))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(icon_x, icon_y, icon_w, icon_h, 6, 6)
-
-        # Lens
-        lens_r = int(diameter * 0.09)
-        painter.setBrush(QColor("#110010"))
-        painter.drawEllipse(int(center - lens_r), int(center - lens_r / 2), int(lens_r * 2), int(lens_r * 2))
-
-        # Text
-        painter.setPen(QColor("#9a7b10"))
-        font = QFont("Georgia", max(7, diameter // 24))
-        font.setItalic(True)
-        painter.setFont(font)
-        painter.drawText(0, int(center + radius * 0.45), diameter, 20, Qt.AlignmentFlag.AlignCenter, "C A P T U R E")
-
-        # Crown
-        painter.setPen(QColor("#d4af37"))
-        crown_font = QFont("Arial", max(12, diameter // 10))
-        painter.setFont(crown_font)
-        painter.drawText(0, int(center - radius - diameter * 0.05), diameter, 30, Qt.AlignmentFlag.AlignCenter, "👑")
-
-        painter.end()
-        return pixmap
-
-    def _apply_miss_capture_style(self, diameter: int):
-        """Apply generated 'Photobooth Miss' style to capture button."""
-        normal_pixmap = self._build_miss_pixmap(diameter, pressed=False)
-        pressed_pixmap = self._build_miss_pixmap(diameter, pressed=True)
-        self._miss_capture_pixmaps = (normal_pixmap, pressed_pixmap)
-
-        self.capture_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: none;
-            }
-        """)
-        self.capture_btn.setText("")
-        self.capture_btn.setIcon(QIcon(normal_pixmap))
-        self.capture_btn.setIconSize(QSize(diameter, diameter))
-
-        if not self._miss_handlers_connected:
-            self.capture_btn.pressed.connect(self._on_capture_pressed)
-            self.capture_btn.released.connect(self._on_capture_released)
-            self._miss_handlers_connected = True
-
-    def _on_capture_pressed(self):
-        """Swap to pressed pixmap when capture button is pressed."""
-        if self.buttons_config.capture_mode != "miss" or not self._miss_capture_pixmaps:
+    def _position_capture_overlay(self):
+        """Position the overlay WebEngine on top of the capture button."""
+        if not self.capture_overlay:
             return
-        self.capture_btn.setIcon(QIcon(self._miss_capture_pixmaps[1]))
-
-    def _on_capture_released(self):
-        """Restore normal pixmap when capture button is released."""
-        if self.buttons_config.capture_mode != "miss" or not self._miss_capture_pixmaps:
-            return
-        self.capture_btn.setIcon(QIcon(self._miss_capture_pixmaps[0]))
+        
+        # Get capture button position in preview_label coordinates
+        btn_pos = self.capture_btn.pos()
+        btn_size = self.capture_btn.size()
+        
+        # Center the overlay on the button position
+        overlay_w = self.capture_overlay.width()
+        overlay_h = self.capture_overlay.height()
+        
+        x = btn_pos.x() + (btn_size.width() - overlay_w) // 2
+        y = btn_pos.y() + (btn_size.height() - overlay_h) // 2
+        
+        self.capture_overlay.move(x, y)
+        self.capture_overlay.raise_()
 
     def update_capture_button_style(self, diameter: int):
         """Update round capture button size and style.
@@ -430,8 +364,17 @@ class CaptureScreen(QWidget):
         self.capture_btn.setFixedSize(diameter, diameter)
 
         if self.buttons_config.capture_mode == "miss":
-            self._apply_miss_capture_style(diameter)
+            # Hide standard button, show overlay
+            self.capture_btn.hide()
+            if self.capture_overlay:
+                self._position_capture_overlay()
+                self.capture_overlay.show()
         else:
+            # Show standard button, hide overlay
+            self.capture_btn.show()
+            if self.capture_overlay:
+                self.capture_overlay.hide()
+            
             self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
             self.capture_btn.setStyleSheet(f"""
                 QPushButton {{

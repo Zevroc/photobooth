@@ -43,7 +43,7 @@ class EmailController:
             Tuple of (success: bool, message: str) with status and details
         """
         if not self.sender_email or not self.sender_password:
-            return False, "Email ou mot de passe non configurés"
+            return False, "❌ Email ou mot de passe non configurés"
         
         try:
             # Create test message
@@ -56,20 +56,47 @@ class EmailController:
             body = "Ceci est un email de test pour vérifier la configuration du serveur SMTP du Photobooth."
             msg.attach(MIMEText(body, 'plain'))
             
-            # Send email
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            # Send email with timeout
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
+                server.set_debuglevel(0)  # Disable debug output
+                
                 if self.use_tls:
                     server.starttls()
+                
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
-            return True, "Email de test envoyé avec succès!"
-        except smtplib.SMTPAuthenticationError:
-            return False, "Erreur d'authentification: Vérifiez l'email et le mot de passe"
+            return True, f"✅ Email de test envoyé avec succès à {self.sender_email}!"
+            
+        except smtplib.SMTPAuthenticationError as e:
+            error_msg = str(e)
+            if "gmail" in self.smtp_server.lower():
+                return False, (
+                    "❌ Erreur d'authentification Gmail\n\n"
+                    "Pour Gmail, vous devez utiliser un 'Mot de passe d'application':\n"
+                    "1. Activez la validation en deux étapes sur votre compte Google\n"
+                    "2. Allez sur https://myaccount.google.com/apppasswords\n"
+                    "3. Créez un mot de passe d'application pour 'Courrier'\n"
+                    "4. Utilisez ce mot de passe (16 caractères) dans la configuration\n\n"
+                    f"Détails: {error_msg}"
+                )
+            else:
+                return False, f"❌ Erreur d'authentification: Vérifiez l'email et le mot de passe\n\nDétails: {error_msg}"
+                
+        except smtplib.SMTPConnectError as e:
+            return False, f"❌ Impossible de se connecter au serveur {self.smtp_server}:{self.smtp_port}\n\nVérifiez le serveur et le port.\nDétails: {str(e)}"
+            
+        except smtplib.SMTPServerDisconnected as e:
+            return False, f"❌ Le serveur a fermé la connexion\n\nEssayez de changer le port (587 pour TLS, 465 pour SSL).\nDétails: {str(e)}"
+            
         except smtplib.SMTPException as e:
-            return False, f"Erreur SMTP: {str(e)}"
+            return False, f"❌ Erreur SMTP: {str(e)}"
+            
+        except TimeoutError:
+            return False, f"❌ Timeout: Le serveur {self.smtp_server} ne répond pas"
+            
         except Exception as e:
-            return False, f"Erreur: {str(e)}"
+            return False, f"❌ Erreur inattendue: {str(e)}"
 
     def send_photo(
         self,

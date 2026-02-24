@@ -96,7 +96,6 @@ class OneDriveSetupWizard(QDialog):
                 background-color: #1d4ed8;
             }
         """)
-        self.next_btn.clicked.connect(self.go_next)
         button_layout.addWidget(self.next_btn)
         
         layout.addLayout(button_layout)
@@ -119,6 +118,9 @@ class OneDriveSetupWizard(QDialog):
                 font-size: 12px;
             }
         """)
+        
+        # Initialize display state
+        self.update_display()
     
     def create_intro_page(self):
         """Create introduction page."""
@@ -288,15 +290,25 @@ class OneDriveSetupWizard(QDialog):
         # Update button states
         self.back_btn.setEnabled(self.current_step > 0)
         
+        # Always disconnect from previous handlers and reconnect properly
+        try:
+            self.next_btn.clicked.disconnect(self.go_next)
+        except TypeError:
+            pass
+        try:
+            self.next_btn.clicked.disconnect(self.finish_wizard)
+        except TypeError:
+            pass
+        
         if self.current_step == 3:
-            # Summary page
+            # Summary page - show final review
             self.summary_client_id.setText(self.client_id)
             self.summary_tenant_id.setText(self.tenant_id)
             self.next_btn.setText("✓ Terminer")
-            self.next_btn.clicked.disconnect()
             self.next_btn.clicked.connect(self.finish_wizard)
         else:
             self.next_btn.setText("Suivant →")
+            self.next_btn.clicked.connect(self.go_next)
     
     def finish_wizard(self):
         """Finish the wizard and emit signal with collected data."""

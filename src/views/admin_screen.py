@@ -3,10 +3,10 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QLineEdit, QComboBox, QCheckBox,
     QTabWidget, QFormLayout, QFileDialog,
-    QGroupBox, QMessageBox
+    QGroupBox, QMessageBox, QTextEdit, QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-from PyQt6.QtGui import QFont, QImage, QPixmap
+from PyQt6.QtGui import QFont, QImage, QPixmap, QCursor
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
 from src.controllers.printer_controller import PrinterController
@@ -597,8 +597,8 @@ class AdminScreen(QWidget):
     
     def test_email_connection(self):
         """Test email connection with current settings."""
-        # Show a loading message
-        QMessageBox.information(self, "Test Email", "Tentative de connexion...")
+        # Show waiting cursor
+        self.setCursor(QCursor(Qt.CursorShape.WaitCursor))
         
         try:
             # Create temporary email controller with current settings
@@ -614,24 +614,80 @@ class AdminScreen(QWidget):
             # Test connection
             success, message = email_controller.test_connection()
             
-            if success:
-                QMessageBox.information(
-                    self,
-                    "✓ Succès",
-                    message
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "✗ Erreur",
-                    message
-                )
+            # Restore normal cursor
+            self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+            
+            # Show detailed message in a custom dialog
+            self._show_test_result_dialog(success, message)
+            
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "✗ Erreur",
-                f"Erreur lors du test: {str(e)}"
-            )
+            # Restore normal cursor
+            self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+            
+            error_msg = f"❌ Erreur lors du test:\n\n{str(e)}"
+            self._show_test_result_dialog(False, error_msg)
+    
+    def _show_test_result_dialog(self, success: bool, message: str):
+        """Show test result in a dialog with proper formatting.
+        
+        Args:
+            success: Whether the test succeeded
+            message: Message to display
+        """
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Test de Connexion Email")
+        dialog.setMinimumWidth(500)
+        dialog.setMinimumHeight(300)
+        
+        layout = QVBoxLayout()
+        
+        # Title label
+        title = QLabel("✅ Test Réussi" if success else "❌ Test Échoué")
+        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+        
+        # Message text (read-only, selectable)
+        text_edit = QTextEdit()
+        text_edit.setPlainText(message)
+        text_edit.setReadOnly(True)
+        text_edit.setFont(QFont("Consolas", 10))
+        layout.addWidget(text_edit)
+        
+        # OK button
+        ok_btn = QPushButton("OK")
+        ok_btn.setMinimumWidth(100)
+        ok_btn.clicked.connect(dialog.accept)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(ok_btn)
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+        
+        dialog.setLayout(layout)
+        
+        # Style based on success/failure
+        if success:
+            dialog.setStyleSheet("""
+                QDialog {
+                    background-color: #f0fdf4;
+                }
+                QLabel {
+                    color: #15803d;
+                }
+            """)
+        else:
+            dialog.setStyleSheet("""
+                QDialog {
+                    background-color: #fef2f2;
+                }
+                QLabel {
+                    color: #991b1b;
+                }
+            """)
+        
+        dialog.exec()
     
     def save_config(self):
         """Save configuration."""
