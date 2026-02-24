@@ -1,16 +1,26 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from PyInstaller.utils.hooks import collect_all
+import os
+import sysconfig
 
 block_cipher = None
 
 pyqt6_datas, pyqt6_binaries, pyqt6_hiddenimports = collect_all('PyQt6')
-webengine_datas, webengine_binaries, webengine_hiddenimports = collect_all('PyQt6.QtWebEngineWidgets')
+webengine_datas, webengine_binaries, webengine_hiddenimports = collect_all('PyQt6.QtWebEngineCore')
+
+# Add WebEngine resources explicitly
+site_packages = sysconfig.get_paths()['purelib']
+webengine_path = os.path.join(site_packages, 'PyQt6', 'Qt6', 'resources')
+if os.path.exists(webengine_path):
+    webengine_datas.append((webengine_path, 'PyQt6/Qt6/resources'))
+
+extra_binaries = webengine_binaries + pyqt6_binaries
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=pyqt6_binaries + webengine_binaries,
+    binaries=extra_binaries,
     datas=[
         ('assets', 'assets'),
         ('config', 'config'),
@@ -51,6 +61,7 @@ a = Analysis(
         'win32print',
         'win32api',
         'win32con',
+        'PyQt6.QtWebEngineProcess',
     ] + pyqt6_hiddenimports + webengine_hiddenimports,
     hookspath=[],
     hooksconfig={},
