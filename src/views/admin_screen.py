@@ -245,11 +245,8 @@ class AdminScreen(QWidget):
         info.setWordWrap(True)
         layout.addWidget(info)
         
-        # Capture button
-        self._create_button_selector(
-            layout, "📸 Prendre une photo",
-            "capture_normal", "capture_pressed"
-        )
+        # Capture button (with generated style toggle)
+        self._create_capture_button_selector(layout)
         
         # Choose frame button
         self._create_button_selector(
@@ -266,6 +263,80 @@ class AdminScreen(QWidget):
         layout.addStretch()
         widget.setLayout(layout)
         return widget
+
+    def _create_capture_button_selector(self, parent_layout: QVBoxLayout):
+        """Create capture button selector with generated-style toggle."""
+        group = QGroupBox("📸 Prendre une photo")
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+
+        self.capture_generated_check = QCheckBox(
+            "Utiliser le bouton Photobooth Miss (généré)"
+        )
+        self.capture_generated_check.setChecked(
+            getattr(self.config.buttons, "capture_mode", "image") == "miss"
+        )
+        self.capture_generated_check.stateChanged.connect(self._toggle_capture_selectors)
+        layout.addWidget(self.capture_generated_check)
+
+        # Normal image selector
+        normal_layout = QHBoxLayout()
+        normal_layout.addWidget(QLabel("État normal:"))
+        self.capture_normal_edit = QLineEdit(self.config.buttons.capture_normal)
+        self.capture_normal_edit.setReadOnly(True)
+        self.capture_normal_edit.setPlaceholderText("Aucune image sélectionnée")
+        normal_layout.addWidget(self.capture_normal_edit)
+        self.capture_normal_btn = QPushButton("Parcourir...")
+        self.capture_normal_btn.clicked.connect(
+            lambda: self._browse_button_image(self.capture_normal_edit, "capture_normal")
+        )
+        normal_layout.addWidget(self.capture_normal_btn)
+        self.capture_normal_clear = QPushButton("✕")
+        self.capture_normal_clear.setMaximumWidth(40)
+        self.capture_normal_clear.clicked.connect(
+            lambda: (self.capture_normal_edit.setText(""),
+                     setattr(self.config.buttons, "capture_normal", ""))
+        )
+        normal_layout.addWidget(self.capture_normal_clear)
+        layout.addLayout(normal_layout)
+
+        # Pressed image selector
+        pressed_layout = QHBoxLayout()
+        pressed_layout.addWidget(QLabel("État pressé:"))
+        self.capture_pressed_edit = QLineEdit(self.config.buttons.capture_pressed)
+        self.capture_pressed_edit.setReadOnly(True)
+        self.capture_pressed_edit.setPlaceholderText("Aucune image sélectionnée")
+        pressed_layout.addWidget(self.capture_pressed_edit)
+        self.capture_pressed_btn = QPushButton("Parcourir...")
+        self.capture_pressed_btn.clicked.connect(
+            lambda: self._browse_button_image(self.capture_pressed_edit, "capture_pressed")
+        )
+        pressed_layout.addWidget(self.capture_pressed_btn)
+        self.capture_pressed_clear = QPushButton("✕")
+        self.capture_pressed_clear.setMaximumWidth(40)
+        self.capture_pressed_clear.clicked.connect(
+            lambda: (self.capture_pressed_edit.setText(""),
+                     setattr(self.config.buttons, "capture_pressed", ""))
+        )
+        pressed_layout.addWidget(self.capture_pressed_clear)
+        layout.addLayout(pressed_layout)
+
+        group.setLayout(layout)
+        parent_layout.addWidget(group)
+        self._toggle_capture_selectors()
+
+    def _toggle_capture_selectors(self):
+        """Enable/disable capture image selectors based on generated toggle."""
+        use_generated = self.capture_generated_check.isChecked()
+        for widget in (
+            self.capture_normal_edit,
+            self.capture_pressed_edit,
+            self.capture_normal_btn,
+            self.capture_pressed_btn,
+            self.capture_normal_clear,
+            self.capture_pressed_clear,
+        ):
+            widget.setEnabled(not use_generated)
     
     def _create_button_selector(self, parent_layout: QVBoxLayout, label: str, normal_attr: str, pressed_attr: str):
         """Create a button image selector pair (normal + pressed).
@@ -585,6 +656,17 @@ class AdminScreen(QWidget):
         self.config.email.sender_email = self.email_sender.text()
         self.config.email.sender_password = self.email_password.text()
         self.config.email.use_tls = self.email_tls.isChecked()
+
+        # Update buttons config
+        self.config.buttons.capture_mode = (
+            "miss" if self.capture_generated_check.isChecked() else "image"
+        )
+        self.config.buttons.capture_normal = self.capture_normal_edit.text()
+        self.config.buttons.capture_pressed = self.capture_pressed_edit.text()
+        self.config.buttons.choose_frame_normal = self.choose_frame_normal_edit.text()
+        self.config.buttons.choose_frame_pressed = self.choose_frame_pressed_edit.text()
+        self.config.buttons.gallery_normal = self.gallery_normal_edit.text()
+        self.config.buttons.gallery_pressed = self.gallery_pressed_edit.text()
         
         # Update printer config
         self.config.printer.enabled = self.printer_enabled.isChecked()

@@ -46,6 +46,7 @@ class PrinterConfig:
 @dataclass
 class ButtonsConfig:
     """Custom button images configuration."""
+    capture_mode: str = "image"
     capture_normal: str = ""
     capture_pressed: str = ""
     choose_frame_normal: str = ""

@@ -6,8 +6,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QMessageBox
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QSize
+from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor, QIcon, QPen, QRadialGradient
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
 from src.models.photo import Photo
@@ -27,6 +27,8 @@ class CaptureScreen(QWidget):
         self.camera = camera_controller
         self.photo_controller = photo_controller
         self.buttons_config = buttons_config or ButtonsConfig()
+        self._miss_capture_pixmaps: Optional[tuple[QPixmap, QPixmap]] = None
+        self._miss_handlers_connected = False
         self.selected_frame = None
         self.countdown = 0
         self.is_capturing = False
@@ -240,7 +242,7 @@ class CaptureScreen(QWidget):
         """)
 
     def _apply_image_button_styles(self):
-        """Apply image-based style for all 3 bottom buttons."""
+        """Apply image-based style for frame and gallery buttons."""
         self._set_button_image_style(
             self.choose_frame_btn,
             [
@@ -271,6 +273,31 @@ class CaptureScreen(QWidget):
         )
 
         self._set_button_image_style(
+            self.gallery_btn,
+            [
+                "gallery_normal.png",
+                "galerie_normal.png",
+                "gallerie_normal.png",
+                "gallerie_photos_normal.png",
+                "galerie_photos_normal.png",
+                "gallery_unpressed.png"
+            ],
+            [
+                "gallery_pressed.png",
+                "galerie_pressed.png",
+                "gallerie_pressed.png",
+                "gallerie_photos_pressed.png",
+                "galerie_photos_pressed.png",
+                "gallery_down.png"
+            ],
+            "Galerie",
+            custom_normal=self.buttons_config.gallery_normal,
+            custom_pressed=self.buttons_config.gallery_pressed
+        )
+
+    def _apply_capture_image_style(self):
+        """Apply image-based style for the capture button."""
+        self._set_button_image_style(
             self.capture_btn,
             [
                 "capture_normal.png",
@@ -295,28 +322,99 @@ class CaptureScreen(QWidget):
             custom_pressed=self.buttons_config.capture_pressed
         )
 
-        self._set_button_image_style(
-            self.gallery_btn,
-            [
-                "gallery_normal.png",
-                "galerie_normal.png",
-                "gallerie_normal.png",
-                "gallerie_photos_normal.png",
-                "galerie_photos_normal.png",
-                "gallery_unpressed.png"
-            ],
-            [
-                "gallery_pressed.png",
-                "galerie_pressed.png",
-                "gallerie_pressed.png",
-                "gallerie_photos_pressed.png",
-                "galerie_photos_pressed.png",
-                "gallery_down.png"
-            ],
-            "Galerie",
-            custom_normal=self.buttons_config.gallery_normal,
-            custom_pressed=self.buttons_config.gallery_pressed
-        )
+    def _build_miss_pixmap(self, diameter: int, pressed: bool = False) -> QPixmap:
+        """Build a generated 'Photobooth Miss' style pixmap for the capture button."""
+        pixmap = QPixmap(diameter, diameter)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing, True)
+
+        center = diameter / 2
+        radius = diameter / 2 - 6
+
+        # Base gradient
+        gradient = QRadialGradient(center, center, radius)
+        if pressed:
+            gradient.setColorAt(0.0, QColor("#2b0f22"))
+            gradient.setColorAt(1.0, QColor("#0a0008"))
+        else:
+            gradient.setColorAt(0.0, QColor("#3a1a2e"))
+            gradient.setColorAt(1.0, QColor("#0a0008"))
+
+        painter.setBrush(gradient)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(int(center - radius), int(center - radius), int(radius * 2), int(radius * 2))
+
+        # Gold rim
+        rim_color = QColor("#d4af37")
+        pen = QPen(rim_color, max(2, diameter // 40))
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawEllipse(int(center - radius), int(center - radius), int(radius * 2), int(radius * 2))
+
+        # Camera icon (simple)
+        icon_w = int(diameter * 0.38)
+        icon_h = int(diameter * 0.26)
+        icon_x = int(center - icon_w / 2)
+        icon_y = int(center - icon_h / 2 - diameter * 0.08)
+        painter.setBrush(QColor("#d4af37"))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(icon_x, icon_y, icon_w, icon_h, 6, 6)
+
+        # Lens
+        lens_r = int(diameter * 0.09)
+        painter.setBrush(QColor("#110010"))
+        painter.drawEllipse(int(center - lens_r), int(center - lens_r / 2), int(lens_r * 2), int(lens_r * 2))
+
+        # Text
+        painter.setPen(QColor("#9a7b10"))
+        font = QFont("Georgia", max(7, diameter // 24))
+        font.setItalic(True)
+        painter.setFont(font)
+        painter.drawText(0, int(center + radius * 0.45), diameter, 20, Qt.AlignmentFlag.AlignCenter, "C A P T U R E")
+
+        # Crown
+        painter.setPen(QColor("#d4af37"))
+        crown_font = QFont("Arial", max(12, diameter // 10))
+        painter.setFont(crown_font)
+        painter.drawText(0, int(center - radius - diameter * 0.05), diameter, 30, Qt.AlignmentFlag.AlignCenter, "👑")
+
+        painter.end()
+        return pixmap
+
+    def _apply_miss_capture_style(self, diameter: int):
+        """Apply generated 'Photobooth Miss' style to capture button."""
+        normal_pixmap = self._build_miss_pixmap(diameter, pressed=False)
+        pressed_pixmap = self._build_miss_pixmap(diameter, pressed=True)
+        self._miss_capture_pixmaps = (normal_pixmap, pressed_pixmap)
+
+        self.capture_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+            }
+        """)
+        self.capture_btn.setText("")
+        self.capture_btn.setIcon(QIcon(normal_pixmap))
+        self.capture_btn.setIconSize(QSize(diameter, diameter))
+
+        if not self._miss_handlers_connected:
+            self.capture_btn.pressed.connect(self._on_capture_pressed)
+            self.capture_btn.released.connect(self._on_capture_released)
+            self._miss_handlers_connected = True
+
+    def _on_capture_pressed(self):
+        """Swap to pressed pixmap when capture button is pressed."""
+        if self.buttons_config.capture_mode != "miss" or not self._miss_capture_pixmaps:
+            return
+        self.capture_btn.setIcon(QIcon(self._miss_capture_pixmaps[1]))
+
+    def _on_capture_released(self):
+        """Restore normal pixmap when capture button is released."""
+        if self.buttons_config.capture_mode != "miss" or not self._miss_capture_pixmaps:
+            return
+        self.capture_btn.setIcon(QIcon(self._miss_capture_pixmaps[0]))
 
     def update_capture_button_style(self, diameter: int):
         """Update round capture button size and style.
@@ -330,41 +428,53 @@ class CaptureScreen(QWidget):
         font_size = max(72, int(diameter * 0.62))
 
         self.capture_btn.setFixedSize(diameter, diameter)
-        self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
-        self.capture_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: qlineargradient(
-                    x1: 0, y1: 0,
-                    x2: 1, y2: 1,
-                    stop: 0 #3b82f6,
-                    stop: 1 #1d4ed8
-                );
-                color: #ffffff;
-                border: {border_width}px solid #dbeafe;
-                border-radius: {radius}px;
-                font-size: {font_size}px;
-                padding: 0px;
-            }}
-            QPushButton:hover {{
-                background-color: qlineargradient(
-                    x1: 0, y1: 0,
-                    x2: 1, y2: 1,
-                    stop: 0 #60a5fa,
-                    stop: 1 #2563eb
-                );
-                border: {border_width}px solid #bfdbfe;
-            }}
-            QPushButton:pressed {{
-                background-color: #1e40af;
-                border: {border_width}px solid #93c5fd;
-            }}
-            QPushButton:disabled {{
-                background-color: #94a3b8;
-                color: #e2e8f0;
-                border: {border_width}px solid #cbd5e1;
-            }}
-        """)
+
+        if self.buttons_config.capture_mode == "miss":
+            self._apply_miss_capture_style(diameter)
+        else:
+            self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
+            self.capture_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: qlineargradient(
+                        x1: 0, y1: 0,
+                        x2: 1, y2: 1,
+                        stop: 0 #3b82f6,
+                        stop: 1 #1d4ed8
+                    );
+                    color: #ffffff;
+                    border: {border_width}px solid #dbeafe;
+                    border-radius: {radius}px;
+                    font-size: {font_size}px;
+                    padding: 0px;
+                }}
+                QPushButton:hover {{
+                    background-color: qlineargradient(
+                        x1: 0, y1: 0,
+                        x2: 1, y2: 1,
+                        stop: 0 #60a5fa,
+                        stop: 1 #2563eb
+                    );
+                    border: {border_width}px solid #bfdbfe;
+                }}
+                QPushButton:pressed {{
+                    background-color: #1e40af;
+                    border: {border_width}px solid #93c5fd;
+                }}
+                QPushButton:disabled {{
+                    background-color: #94a3b8;
+                    color: #e2e8f0;
+                    border: {border_width}px solid #cbd5e1;
+                }}
+            """)
+            self._apply_capture_image_style()
+
         self._apply_image_button_styles()
+
+    def set_buttons_config(self, buttons_config: ButtonsConfig):
+        """Update button config and refresh styles."""
+        self.buttons_config = buttons_config or ButtonsConfig()
+        current_size = self.capture_btn.width() or 185
+        self.update_capture_button_style(current_size)
 
     def _adapt_capture_button_size(self):
         """Adapt capture button size to preview area."""

@@ -247,8 +247,7 @@ class PhotoboothApp(QMainWindow):
         self.capture_screen.camera = self.camera_controller
         
         # Update button configuration
-        self.capture_screen.buttons_config = self.config.buttons
-        self.capture_screen._apply_image_button_styles()
+        self.capture_screen.set_buttons_config(self.config.buttons)
 
         # Update service controllers
         self.onedrive_controller = OneDriveController(
