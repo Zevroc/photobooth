@@ -1,14 +1,25 @@
 """
 Photobooth Miss – Bouton HTML en overlay PyQt6
 Overlay pour bouton de capture avec effets HTML/CSS/JS
+
+Note: WebEngine est optionnel. Si indisponible, le bouton standard est utilisé.
 """
 
+try:
+    from PyQt6.QtWebEngineWidgets import QWebEngineView
+    from PyQt6.QtWebEngineCore import QWebEngineScript
+    from PyQt6.QtWebChannel import QWebChannel
+    WEBENGINE_AVAILABLE = True
+except ImportError:
+    WEBENGINE_AVAILABLE = False
+    # Fallback imports
+    from PyQt6.QtWidgets import QPushButton, QWidget
+    QWebEngineView = None
+    QWebChannel = None
+
 from PyQt6.QtWidgets import QWidget
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEngineScript
 from PyQt6.QtCore import Qt, QUrl, pyqtSlot, QObject, pyqtSignal
 from PyQt6.QtGui import QColor
-from PyQt6.QtWebChannel import QWebChannel
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -304,48 +315,66 @@ class PyBridge(QObject):
 # ─────────────────────────────────────────────────────────────────────────────
 # Widget overlay pour bouton de capture
 # ─────────────────────────────────────────────────────────────────────────────
-class CaptureButtonOverlay(QWebEngineView):
-    """
-    Widget overlay WebEngine pour bouton de capture HTML/CSS/JS.
-    Se superpose au QPushButton standard pour afficher le bouton Miss.
-    """
-
-    clicked = pyqtSignal()  # Émis quand le bouton est cliqué
-
-    def __init__(self, parent: QWidget = None):
-        super().__init__(parent)
-
-        # ── Fond transparent ──
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.page().setBackgroundColor(QColor(Qt.GlobalColor.transparent))
-
-        # ── Bridge Python ↔ JS ──
-        self.bridge = PyBridge()
-        self.channel = QWebChannel()
-        self.channel.registerObject("pybridge", self.bridge)
-        self.page().setWebChannel(self.channel)
-
-        # Connecter le signal du bridge à notre signal clicked
-        self.bridge.photo_taken.connect(self.clicked.emit)
-
-        # ── Injecter qwebchannel.js + init du bridge ──
-        html = self._inject_webchannel(BUTTON_HTML)
-        self.setHtml(html, QUrl("about:blank"))
-
-        # Taille fixe pour le bouton
-        self.setFixedSize(280, 300)
-
-    @staticmethod
-    def _inject_webchannel(html: str) -> str:
-        """Injecte qwebchannel.js et l'initialisation du bridge dans le HTML."""
-        webchannel_init = """
-        <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
-        <script>
-          document.addEventListener('DOMContentLoaded', function() {
-            new QWebChannel(qt.webChannelTransport, function(channel) {
-              window.pybridge = channel.objects.pybridge;
-            });
-          });
-        </script>
+if WEBENGINE_AVAILABLE:
+    class CaptureButtonOverlay(QWebEngineView):
         """
-        return html.replace("</head>", webchannel_init + "</head>", 1)
+        Widget overlay WebEngine pour bouton de capture HTML/CSS/JS.
+        Se superpose au QPushButton standard pour afficher le bouton Miss.
+        """
+
+        clicked = pyqtSignal()  # Émis quand le bouton est cliqué
+
+        def __init__(self, parent: QWidget = None):
+            super().__init__(parent)
+
+            # ── Fond transparent ──
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+            self.page().setBackgroundColor(QColor(Qt.GlobalColor.transparent))
+
+            # ── Bridge Python ↔ JS ──
+            self.bridge = PyBridge()
+            self.channel = QWebChannel()
+            self.channel.registerObject("pybridge", self.bridge)
+            self.page().setWebChannel(self.channel)
+
+            # Connecter le signal du bridge à notre signal clicked
+            self.bridge.photo_taken.connect(self.clicked.emit)
+
+            # ── Injecter qwebchannel.js + init du bridge ──
+            html = self._inject_webchannel(BUTTON_HTML)
+            self.setHtml(html, QUrl("about:blank"))
+
+            # Taille fixe pour le bouton
+            self.setFixedSize(280, 300)
+
+        @staticmethod
+        def _inject_webchannel(html: str) -> str:
+            """Injecte qwebchannel.js et l'initialisation du bridge dans le HTML."""
+            webchannel_init = """
+            <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                new QWebChannel(qt.webChannelTransport, function(channel) {
+                  window.pybridge = channel.objects.pybridge;
+                });
+              });
+            </script>
+            """
+            return html.replace("</head>", webchannel_init + "</head>", 1)
+
+else:
+    # Fallback: widget vide si WebEngine n'est pas disponible
+    class CaptureButtonOverlay(QWidget):
+        """
+        Fallback widget quand WebEngine n'est pas disponible.
+        Reste caché et ne fait rien (le bouton standard est utilisé).
+        """
+
+        clicked = pyqtSignal()
+
+        def __init__(self, parent: QWidget = None):
+            super().__init__(parent)
+            self.setFixedSize(280, 300)
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+            # Fallback is not visible
+            self.hide()
