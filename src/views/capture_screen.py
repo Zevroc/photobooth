@@ -66,7 +66,6 @@ class CaptureScreen(QWidget):
         self.capture_btn = QPushButton("")
         self.capture_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.capture_btn.clicked.connect(self.start_countdown)
-        self.update_capture_button_style(185)
 
         # Secondary buttons
         self.choose_frame_btn = QPushButton("")
@@ -74,6 +73,9 @@ class CaptureScreen(QWidget):
 
         self.gallery_btn = QPushButton("")
         self.gallery_btn.clicked.connect(self.gallery_requested.emit)
+
+        # Apply style now that all buttons exist
+        self.update_capture_button_style(185)
 
         self.choose_frame_btn.setObjectName("chooseFrameBtn")
         self.capture_btn.setObjectName("captureBtn")
@@ -101,7 +103,6 @@ class CaptureScreen(QWidget):
         self.admin_hotspot_btn.clicked.connect(self.admin_requested.emit)
 
         self._style_secondary_buttons()
-        self._apply_image_button_styles()
         
         # Place countdown on top of preview
         overlay_layout = QVBoxLayout()
