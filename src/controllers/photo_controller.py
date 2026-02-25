@@ -46,29 +46,41 @@ class PhotoController:
     def apply_frame_to_array(self, image_data: np.ndarray, frame_path: str) -> np.ndarray:
         """Apply a frame overlay to raw RGB image data.
 
+        The camera image is resized/cropped to match the frame's dimensions
+        so the frame is never distorted or cut.
+
         Args:
             image_data: RGB image data
             frame_path: Path to frame image
 
         Returns:
-            RGB image with frame applied
+            RGB image with frame applied at the frame's natural resolution
         """
         if image_data is None or not frame_path or not os.path.exists(frame_path):
             return image_data
 
-        # Load frame
+        # Load frame at its natural size
         frame = Image.open(frame_path).convert('RGBA')
+        frame_w, frame_h = frame.size
 
         # Convert photo to PIL Image
         photo_img = Image.fromarray(image_data).convert('RGBA')
+        photo_w, photo_h = photo_img.size
 
-        # Resize frame to match photo size
-        frame = frame.resize(photo_img.size, Image.Resampling.LANCZOS)
+        # Scale camera image to COVER the frame dimensions (crop to fill, no letter-boxing)
+        scale = max(frame_w / photo_w, frame_h / photo_h)
+        new_w = max(1, int(photo_w * scale))
+        new_h = max(1, int(photo_h * scale))
+        photo_resized = photo_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
-        # Composite photo and frame
-        combined = Image.alpha_composite(photo_img, frame)
+        # Center-crop the scaled photo to exactly the frame size
+        left = (new_w - frame_w) // 2
+        top  = (new_h - frame_h) // 2
+        photo_cropped = photo_resized.crop((left, top, left + frame_w, top + frame_h))
 
-        # Convert back to numpy array
+        # Composite: camera image underneath, frame on top
+        combined = Image.alpha_composite(photo_cropped, frame)
+
         return np.array(combined.convert('RGB'))
     
     def save_photo(self, photo: Photo, filename: Optional[str] = None) -> str:
