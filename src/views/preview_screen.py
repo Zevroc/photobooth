@@ -13,6 +13,9 @@ class PreviewScreen(QWidget):
     
     retake_requested = pyqtSignal()  # Signal to retake photo
     done = pyqtSignal()              # Signal when done
+    onedrive_upload_requested = pyqtSignal(str)  # Signal to upload saved path to OneDrive
+    email_send_requested = pyqtSignal(str, str)  # Signal to send (recipient, saved_path)
+    print_requested = pyqtSignal(str)  # Signal to print saved path
     
     def __init__(self):
         super().__init__()
@@ -198,6 +201,14 @@ class PreviewScreen(QWidget):
     
     def on_email_clicked(self):
         """Handle email button click."""
+        if not self.saved_path:
+            QMessageBox.warning(
+                self,
+                "Email",
+                "Aucune photo sauvegardée à envoyer."
+            )
+            return
+
         email, ok = QInputDialog.getText(
             self, 
             "Envoyer par Email", 
@@ -205,27 +216,28 @@ class PreviewScreen(QWidget):
         )
         
         if ok and email:
-            # Placeholder for email sending
-            QMessageBox.information(
-                self, 
-                "Email", 
-                f"La photo serait envoyée à: {email}\n(Fonctionnalité à configurer dans Admin)"
-            )
+            self.email_send_requested.emit(email.strip(), self.saved_path)
     
     def on_onedrive_clicked(self):
         """Handle OneDrive button click."""
-        # Placeholder for OneDrive upload
-        QMessageBox.information(
-            self, 
-            "OneDrive", 
-            "La photo serait uploadée sur OneDrive\n(Fonctionnalité à configurer dans Admin)"
-        )
+        if not self.saved_path:
+            QMessageBox.warning(
+                self,
+                "OneDrive",
+                "Aucune photo sauvegardée à envoyer."
+            )
+            return
+
+        self.onedrive_upload_requested.emit(self.saved_path)
     
     def on_print_clicked(self):
         """Handle print button click."""
-        # Placeholder for printing
-        QMessageBox.information(
-            self, 
-            "Impression", 
-            "La photo serait imprimée\n(Fonctionnalité à configurer dans Admin)"
-        )
+        if not self.saved_path:
+            QMessageBox.warning(
+                self,
+                "Impression",
+                "Aucune photo sauvegardée à imprimer."
+            )
+            return
+
+        self.print_requested.emit(self.saved_path)

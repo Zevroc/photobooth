@@ -1,7 +1,7 @@
 """Main application file."""
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QMessageBox
 from PyQt6.QtCore import Qt
 
 from src.models import AppConfig
@@ -147,6 +147,9 @@ class PhotoboothApp(QMainWindow):
         
         self.preview_screen.retake_requested.connect(self.show_capture)
         self.preview_screen.done.connect(self.show_capture)
+        self.preview_screen.onedrive_upload_requested.connect(self.on_preview_onedrive_upload)
+        self.preview_screen.email_send_requested.connect(self.on_preview_email_send)
+        self.preview_screen.print_requested.connect(self.on_preview_print)
         
         self.admin_screen.back_requested.connect(self.show_capture)
         self.admin_screen.config_saved.connect(self.on_config_saved)
@@ -171,6 +174,9 @@ class PhotoboothApp(QMainWindow):
             self.config.onedrive.enabled,
             self.config.printer.enabled
         )
+
+        # Reload frames
+        self.home_screen.load_frames("assets/frames")
         
         # Show capture screen directly
         self.show_capture()
@@ -287,9 +293,127 @@ class PhotoboothApp(QMainWindow):
             self.config.onedrive.enabled,
             self.config.printer.enabled
         )
-        
-        # Reload frames
-        self.home_screen.load_frames("assets/frames")
+
+    def on_preview_onedrive_upload(self, saved_path: str):
+        """Upload preview photo to OneDrive on demand.
+
+        Args:
+            saved_path: Local path of saved photo
+        """
+        if not self.config.onedrive.enabled:
+            QMessageBox.warning(
+                self,
+                "OneDrive désactivé",
+                "OneDrive est désactivé dans l'administration."
+            )
+            return
+
+        if not saved_path or not os.path.exists(saved_path):
+            QMessageBox.warning(
+                self,
+                "Fichier introuvable",
+                "La photo à envoyer est introuvable."
+            )
+            return
+
+        success = self.onedrive_controller.upload_photo(
+            saved_path,
+            self.config.onedrive.folder_path
+        )
+
+        if success:
+            QMessageBox.information(
+                self,
+                "OneDrive",
+                "Photo envoyée sur OneDrive avec succès."
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                "OneDrive",
+                "Échec de l'envoi sur OneDrive. Vérifiez la configuration et réessayez."
+            )
+
+    def on_preview_email_send(self, recipient_email: str, saved_path: str):
+        """Send preview photo by email on demand.
+
+        Args:
+            recipient_email: Target email address
+            saved_path: Local path of saved photo
+        """
+        if not self.config.email.enabled:
+            QMessageBox.warning(
+                self,
+                "Email désactivé",
+                "L'envoi email est désactivé dans l'administration."
+            )
+            return
+
+        if not recipient_email:
+            QMessageBox.warning(
+                self,
+                "Email invalide",
+                "Veuillez renseigner une adresse email valide."
+            )
+            return
+
+        if not saved_path or not os.path.exists(saved_path):
+            QMessageBox.warning(
+                self,
+                "Fichier introuvable",
+                "La photo à envoyer est introuvable."
+            )
+            return
+
+        success = self.email_controller.send_photo(recipient_email, saved_path)
+        if success:
+            QMessageBox.information(
+                self,
+                "Email",
+                f"Photo envoyée avec succès à {recipient_email}."
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                "Email",
+                "Échec de l'envoi email. Vérifiez la configuration SMTP."
+            )
+
+    def on_preview_print(self, saved_path: str):
+        """Print preview photo on demand.
+
+        Args:
+            saved_path: Local path of saved photo
+        """
+        if not self.config.printer.enabled:
+            QMessageBox.warning(
+                self,
+                "Impression désactivée",
+                "L'impression est désactivée dans l'administration."
+            )
+            return
+
+        if not saved_path or not os.path.exists(saved_path):
+            QMessageBox.warning(
+                self,
+                "Fichier introuvable",
+                "La photo à imprimer est introuvable."
+            )
+            return
+
+        success = self.printer_controller.print_photo(saved_path)
+        if success:
+            QMessageBox.information(
+                self,
+                "Impression",
+                "Photo envoyée à l'imprimante."
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                "Impression",
+                "Échec de l'impression. Vérifiez la configuration imprimante."
+            )
     
     def closeEvent(self, event):
         """Handle application close.

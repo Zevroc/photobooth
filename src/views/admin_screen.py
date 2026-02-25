@@ -489,6 +489,8 @@ class AdminScreen(QWidget):
         """Handle OneDrive configuration update from wizard."""
         self.onedrive_client_id.setText(client_id)
         self.onedrive_tenant_id.setText(tenant_id)
+        if client_id:
+            self.onedrive_enabled.setChecked(True)
         QMessageBox.information(
             self,
             "✓ Configuration mise à jour",
