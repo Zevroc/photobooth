@@ -3,15 +3,37 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QLineEdit, QComboBox, QCheckBox,
     QTabWidget, QFormLayout, QFileDialog,
-    QGroupBox, QMessageBox, QTextEdit, QDialog
+    QGroupBox, QMessageBox, QTextEdit, QDialog, QApplication,
+    QProgressBar
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-from PyQt6.QtGui import QFont, QImage, QPixmap, QCursor
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread, QUrl
+from PyQt6.QtGui import QFont, QImage, QPixmap, QCursor, QDesktopServices
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
 from src.controllers.printer_controller import PrinterController
 from src.controllers.email_controller import EmailController
 from src.views.onedrive_setup_wizard import OneDriveSetupWizard
+
+
+class _OneDriveAuthWorker(QThread):
+    """Background thread for OneDrive device flow completion."""
+    success = pyqtSignal()
+    failure = pyqtSignal(str)
+
+    def __init__(self, controller, flow):
+        super().__init__()
+        self.controller = controller
+        self.flow = flow
+
+    def run(self):
+        try:
+            ok = self.controller.complete_device_flow(self.flow)
+            if ok:
+                self.success.emit()
+            else:
+                self.failure.emit("Authentification échouée ou délai expiré.")
+        except Exception as e:
+            self.failure.emit(str(e))
 
 
 class AdminScreen(QWidget):
@@ -502,12 +524,207 @@ class AdminScreen(QWidget):
         """)
         wizard_btn.clicked.connect(self.open_onedrive_wizard)
         layout.addWidget(wizard_btn)
-        
+
+        # Test / authenticate button
+        test_onedrive_btn = QPushButton("🔑 Générer le code de connexion")
+        test_onedrive_btn.setFont(QFont("Segoe UI", 11, QFont.Weight.Medium))
+        test_onedrive_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0078d4;
+                color: #ffffff;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 18px;
+            }
+            QPushButton:hover {
+                background-color: #006cbd;
+            }
+        """)
+        test_onedrive_btn.clicked.connect(self._test_onedrive_connection)
+        layout.addWidget(test_onedrive_btn)
+
         layout.addStretch()
         
         widget.setLayout(layout)
         return widget
     
+    def _test_onedrive_connection(self):
+        """Generate an OneDrive device flow code and show authentication dialog."""
+        client_id = self.onedrive_client_id.text().strip()
+        tenant_id = self.onedrive_tenant_id.text().strip() or "common"
+
+        if not client_id:
+            QMessageBox.warning(
+                self, "Configuration manquante",
+                "Veuillez saisir le Client ID avant de générer le code de connexion."
+            )
+            return
+
+        self.setCursor(QCursor(Qt.CursorShape.WaitCursor))
+        try:
+            from src.controllers.onedrive_controller import OneDriveController
+            self._onedrive_controller = OneDriveController(
+                client_id=client_id,
+                tenant_id=tenant_id,
+                enabled=True
+            )
+            flow = self._onedrive_controller.start_device_flow()
+        except Exception as e:
+            self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+            QMessageBox.critical(
+                self, "Erreur de connexion",
+                f"Impossible de générer le code de connexion.\n"
+                f"Vérifiez votre Client ID et votre connexion Internet.\n\n"
+                f"Détail\u00a0: {e}"
+            )
+            return
+
+        self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+
+        if not flow:
+            QMessageBox.critical(
+                self, "Erreur de connexion",
+                "Impossible de générer le code de connexion.\n"
+                "Vérifiez votre Client ID et votre connexion Internet."
+            )
+            return
+
+        self._onedrive_flow = flow
+        user_code = flow.get("user_code", "")
+        verification_uri = flow.get("verification_uri", "https://microsoft.com/devicelogin")
+        self._show_device_flow_dialog(user_code, verification_uri)
+
+    def _show_device_flow_dialog(self, user_code: str, verification_uri: str):
+        """Show the OneDrive device flow authentication dialog."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Connexion OneDrive — Code d'authentification")
+        dialog.setMinimumWidth(520)
+        dialog.setModal(True)
+        dlg_layout = QVBoxLayout(dialog)
+        dlg_layout.setContentsMargins(25, 25, 25, 25)
+        dlg_layout.setSpacing(15)
+
+        dialog.setStyleSheet("""
+            QDialog { background-color: #f8fafc; color: #0f172a; }
+            QLabel  { color: #0f172a; font-size: 13px; }
+        """)
+
+        title_lbl = QLabel("Authentification OneDrive")
+        title_lbl.setFont(QFont("Segoe UI", 15, QFont.Weight.Bold))
+        dlg_layout.addWidget(title_lbl)
+
+        dlg_layout.addWidget(QLabel("Suivez ces étapes pour autoriser l'accès à OneDrive\u00a0:"))
+
+        # Step 1
+        step1 = QLabel(f"1\u00b7 Ouvrez votre navigateur et allez sur\u00a0:")
+        dlg_layout.addWidget(step1)
+        url_lbl = QLabel(f"<a href='{verification_uri}'>{verification_uri}</a>")
+        url_lbl.setOpenExternalLinks(True)
+        url_lbl.setFont(QFont("Segoe UI", 11))
+        dlg_layout.addWidget(url_lbl)
+
+        # Code display
+        dlg_layout.addWidget(QLabel("2\u00b7 Entrez ce code sur la page\u00a0:"))
+        code_widget = QWidget()
+        code_widget.setStyleSheet(
+            "background-color: #e0f2fe; border-radius: 8px; padding: 6px;"
+        )
+        code_row = QHBoxLayout(code_widget)
+        code_row.setContentsMargins(10, 8, 10, 8)
+        code_lbl = QLabel(user_code)
+        code_lbl.setFont(QFont("Courier New", 26, QFont.Weight.Bold))
+        code_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        code_lbl.setStyleSheet("color: #0369a1; letter-spacing: 4px;")
+        code_row.addWidget(code_lbl)
+        copy_btn = QPushButton("📋 Copier")
+        copy_btn.setFixedWidth(80)
+        copy_btn.setStyleSheet(
+            "QPushButton{background:#0369a1;color:#fff;border-radius:6px;padding:4px 8px;}"
+            "QPushButton:hover{background:#0284c7;}"
+        )
+        copy_btn.clicked.connect(lambda: QApplication.clipboard().setText(user_code))
+        code_row.addWidget(copy_btn)
+        dlg_layout.addWidget(code_widget)
+
+        dlg_layout.addWidget(QLabel("3\u00b7 Connectez-vous avec votre compte Microsoft."))
+        dlg_layout.addWidget(QLabel("4\u00b7 Une fois authentifié, cliquez sur \"Vérifier\"."))
+
+        # Open browser button
+        open_btn = QPushButton("🌐 Ouvrir le navigateur")
+        open_btn.setStyleSheet(
+            "QPushButton{background:#64748b;color:#fff;border-radius:8px;padding:8px 14px;}"
+            "QPushButton:hover{background:#475569;}"
+        )
+        open_btn.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(verification_uri))
+        )
+        dlg_layout.addWidget(open_btn)
+
+        # Status area
+        self._dlg_status_lbl = QLabel("")
+        self._dlg_status_lbl.setWordWrap(True)
+        dlg_layout.addWidget(self._dlg_status_lbl)
+
+        self._dlg_progress = QProgressBar()
+        self._dlg_progress.setRange(0, 0)  # indeterminate
+        self._dlg_progress.setVisible(False)
+        dlg_layout.addWidget(self._dlg_progress)
+
+        # Bottom buttons
+        bottom_row = QHBoxLayout()
+        close_btn = QPushButton("Fermer")
+        close_btn.clicked.connect(dialog.reject)
+        bottom_row.addWidget(close_btn)
+        bottom_row.addStretch()
+
+        self._verify_btn = QPushButton("✓ Vérifier l'authentification")
+        self._verify_btn.setStyleSheet(
+            "QPushButton{background:#2563eb;color:#fff;border-radius:8px;padding:9px 16px;}"
+            "QPushButton:hover{background:#1d4ed8;}"
+        )
+        self._verify_btn.clicked.connect(
+            lambda: self._start_verify_auth(dialog)
+        )
+        bottom_row.addWidget(self._verify_btn)
+        dlg_layout.addLayout(bottom_row)
+
+        dialog.exec()
+
+    def _start_verify_auth(self, dialog: QDialog):
+        """Start background thread to verify OneDrive authentication."""
+        self._verify_btn.setEnabled(False)
+        self._dlg_progress.setVisible(True)
+        self._dlg_status_lbl.setText("En attente de confirmation…")
+        self._dlg_status_lbl.setStyleSheet("color: #64748b;")
+
+        self._auth_worker = _OneDriveAuthWorker(
+            self._onedrive_controller, self._onedrive_flow
+        )
+        self._auth_worker.success.connect(
+            lambda: self._on_auth_success(dialog)
+        )
+        self._auth_worker.failure.connect(
+            lambda msg: self._on_auth_failure(msg)
+        )
+        self._auth_worker.start()
+
+    def _on_auth_success(self, dialog: QDialog):
+        """Handle successful OneDrive authentication."""
+        self._dlg_progress.setVisible(False)
+        self._dlg_status_lbl.setText("✓ Authentification réussie\u00a0! OneDrive est connecté.")
+        self._dlg_status_lbl.setStyleSheet("color: #16a34a; font-weight: bold;")
+        self._verify_btn.setEnabled(True)
+        self._verify_btn.setText("Fermer")
+        self._verify_btn.clicked.disconnect()
+        self._verify_btn.clicked.connect(dialog.accept)
+
+    def _on_auth_failure(self, message: str):
+        """Handle failed OneDrive authentication."""
+        self._dlg_progress.setVisible(False)
+        self._dlg_status_lbl.setText(f"✗ {message}")
+        self._dlg_status_lbl.setStyleSheet("color: #dc2626;")
+        self._verify_btn.setEnabled(True)
+
     def open_onedrive_wizard(self):
         """Open OneDrive setup wizard."""
         wizard = OneDriveSetupWizard(
@@ -611,7 +828,7 @@ class AdminScreen(QWidget):
         layout.addRow("Imprimante:", self.printer_combo)
         
         self.paper_size_combo = QComboBox()
-        self.paper_size_combo.addItems(["A4", "Letter", "4x6", "5x7"])
+        self.paper_size_combo.addItems(["A4", "Letter", "4x6", "5x7", "100x148"])
         self.paper_size_combo.setCurrentText(self.config.printer.paper_size)
         layout.addRow("Format papier:", self.paper_size_combo)
         
