@@ -196,9 +196,10 @@ class HomeScreen(QWidget):
         # Image preview
         if frame_path and os.path.exists(frame_path):
             pixmap = QPixmap(frame_path)
-            pixmap = pixmap.scaled(270, 270, Qt.AspectRatioMode.KeepAspectRatio, 
+            pixmap = pixmap.scaled(260, 260, Qt.AspectRatioMode.KeepAspectRatio, 
                                   Qt.TransformationMode.SmoothTransformation)
             img_label = QLabel()
+            img_label.setFixedSize(260, 260)
             img_label.setPixmap(pixmap)
             img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(img_label)

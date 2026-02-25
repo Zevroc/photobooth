@@ -1,16 +1,16 @@
-"""Simple OneDrive setup with email and password."""
+"""OneDrive setup with device code flow."""
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QLineEdit, QMessageBox
+    QMessageBox, QApplication, QWidget
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
 
 from src.controllers.onedrive_controller import OneDriveController
 
 
 class OneDriveSetupWizard(QDialog):
-    """Simple dialog for setting up OneDrive with email/password."""
+    """Dialog for setting up OneDrive with device code authentication."""
     
     config_updated = pyqtSignal(str, str)  # Emits (client_id, tenant_id)
     
@@ -18,17 +18,17 @@ class OneDriveSetupWizard(QDialog):
         super().__init__(parent)
         self.client_id = initial_client_id or "04b07795-8ddb-461a-bbee-02f9e1bf7b46"  # Default public client
         self.tenant_id = initial_tenant_id or "common"
-        self.email = ""
-        self.password = ""
         self.auth_success = False
         self.controller = None
+        self.device_flow = None
+        self.poll_timer = None
         self.setup_ui()
     
     def setup_ui(self):
         """Initialize the user interface."""
         self.setWindowTitle("Connexion OneDrive")
         self.setMinimumWidth(600)
-        self.setMinimumHeight(500)
+        self.setMinimumHeight(600)
         self.setModal(True)
         
         layout = QVBoxLayout()
@@ -43,8 +43,8 @@ class OneDriveSetupWizard(QDialog):
         
         # Description
         desc = QLabel(
-            "Entrez vos identifiants Microsoft pour connecter votre compte OneDrive.\n"
-            "Vos photos seront uploadées automatiquement."
+            "Cliquez sur 'Démarrer la connexion' pour obtenir votre code.\n"
+            "Vous devrez le saisir sur votre téléphone ou ordinateur."
         )
         desc.setWordWrap(True)
         desc.setFont(QFont("Segoe UI", 12))
@@ -53,29 +53,74 @@ class OneDriveSetupWizard(QDialog):
         
         layout.addSpacing(20)
         
-        # Email field
-        layout.addWidget(QLabel("Adresse email Microsoft:"))
-        self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("exemple@outlook.com")
-        self.email_input.setMinimumHeight(45)
-        self.email_input.setFont(QFont("Segoe UI", 12))
-        layout.addWidget(self.email_input)
+        # Device code display (initially hidden)
+        self.code_container = QWidget()
+        code_layout = QVBoxLayout(self.code_container)
+        code_layout.setContentsMargins(20, 20, 20, 20)
+        code_layout.setSpacing(15)
         
-        layout.addSpacing(15)
+        code_label = QLabel("Votre code:")
+        code_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        code_layout.addWidget(code_label)
         
-        # Password field
-        layout.addWidget(QLabel("Mot de passe Microsoft:"))
-        self.password_input = QLineEdit()
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setPlaceholderText("Votre mot de passe")
-        self.password_input.setMinimumHeight(45)
-        self.password_input.setFont(QFont("Segoe UI", 12))
-        layout.addWidget(self.password_input)
+        self.device_code_label = QLabel("")
+        self.device_code_label.setFont(QFont("Courier New", 48, QFont.Weight.Bold))
+        self.device_code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.device_code_label.setStyleSheet("""
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 3px solid #3b82f6;
+            border-radius: 15px;
+            padding: 30px;
+            letter-spacing: 8px;
+        """)
+        code_layout.addWidget(self.device_code_label)
         
-        warn_label = QLabel("⚠️ Votre mot de passe n'est jamais stocké, seulement le token de connexion.")
-        warn_label.setStyleSheet("color: #666; font-size: 10px;")
-        warn_label.setWordWrap(True)
-        layout.addWidget(warn_label)
+        self.copy_code_btn = QPushButton("📋 Copier le code")
+        self.copy_code_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        self.copy_code_btn.setMinimumHeight(50)
+        self.copy_code_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3b82f6;
+                color: #ffffff;
+                border: none;
+                border-radius: 10px;
+                padding: 12px;
+            }
+            QPushButton:hover {
+                background-color: #2563eb;
+            }
+            QPushButton:pressed {
+                background-color: #1d4ed8;
+            }
+        """)
+        self.copy_code_btn.clicked.connect(self.copy_code)
+        code_layout.addWidget(self.copy_code_btn)
+        
+        self.url_label = QLabel("")
+        self.url_label.setFont(QFont("Segoe UI", 11))
+        self.url_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.url_label.setWordWrap(True)
+        self.url_label.setOpenExternalLinks(True)
+        self.url_label.setStyleSheet("color: #475569; margin-top: 10px;")
+        code_layout.addWidget(self.url_label)
+        
+        wait_label = QLabel("⏳ En attente de votre validation sur téléphone...")
+        wait_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Medium))
+        wait_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        wait_label.setStyleSheet("color: #f97316; margin-top: 10px;")
+        code_layout.addWidget(wait_label)
+        
+        self.code_container.setStyleSheet("""
+            QWidget {
+                background-color: #ffffff;
+                border-radius: 15px;
+                border: 2px solid #e2e8f0;
+            }
+        """)
+        self.code_container.hide()
+        layout.addWidget(self.code_container)
         
         layout.addSpacing(20)
         
@@ -89,7 +134,7 @@ class OneDriveSetupWizard(QDialog):
         layout.addStretch()
         
         # Connect button
-        self.connect_btn = QPushButton("🔓 Se connecter")
+        self.connect_btn = QPushButton("🔓 Démarrer la connexion")
         self.connect_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.connect_btn.setMinimumHeight(60)
         self.connect_btn.setStyleSheet("""
@@ -168,36 +213,21 @@ class OneDriveSetupWizard(QDialog):
             QLabel {
                 color: #0f172a;
             }
-            QLineEdit {
-                background-color: #ffffff;
-                color: #0f172a;
-                border: 2px solid #cbd5e1;
-                border-radius: 10px;
-                padding: 10px 15px;
-                font-size: 12px;
-            }
-            QLineEdit:focus {
-                border: 2px solid #2563eb;
-            }
         """)
     
+    def copy_code(self):
+        """Copy device code to clipboard."""
+        code = self.device_code_label.text()
+        if code:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(code)
+            self.copy_code_btn.setText("✅ Code copié!")
+            QTimer.singleShot(2000, lambda: self.copy_code_btn.setText("📋 Copier le code"))
+    
     def do_connect(self):
-        """Perform OneDrive connection with email and password."""
-        self.email = self.email_input.text().strip()
-        self.password = self.password_input.text().strip()
-        
-        if not self.email:
-            QMessageBox.warning(self, "Email requis", "Veuillez renseigner votre adresse email.")
-            return
-        
-        if not self.password:
-            QMessageBox.warning(self, "Mot de passe requis", "Veuillez renseigner votre mot de passe.")
-            return
-        
-        self.status_label.setText("Connexion en cours...")
+        """Start OneDrive connection with device code flow."""
+        self.status_label.setText("Génération du code...")
         self.connect_btn.setEnabled(False)
-        self.email_input.setEnabled(False)
-        self.password_input.setEnabled(False)
         
         # Create controller with default client ID
         self.controller = OneDriveController(
@@ -206,36 +236,68 @@ class OneDriveSetupWizard(QDialog):
             enabled=True
         )
         
-        # Try to authenticate with email/password
-        success = self.controller.authenticate_with_credentials(self.email, self.password)
+        # Start device flow
+        self.device_flow = self.controller.start_device_flow()
+        
+        if not self.device_flow or "user_code" not in self.device_flow:
+            self.status_label.setText("❌ Erreur de génération du code")
+            self.status_label.setStyleSheet("color: #dc2626; font-weight: bold;")
+            self.connect_btn.setEnabled(True)
+            QMessageBox.critical(
+                self,
+                "Erreur",
+                "Impossible de générer le code de connexion.\n"
+                "Vérifiez votre connexion Internet."
+            )
+            return
+        
+        # Display the code
+        user_code = self.device_flow.get("user_code", "")
+        verification_uri = self.device_flow.get("verification_uri", "https://microsoft.com/devicelogin")
+        
+        self.device_code_label.setText(user_code)
+        self.url_label.setText(
+            f'1. Ouvrez <a href="{verification_uri}" style="color: #2563eb;">{verification_uri}</a><br>'
+            f'2. Entrez le code ci-dessus<br>'
+            f'3. Cliquez sur le nombre sur votre téléphone'
+        )
+        
+        self.code_container.show()
+        self.connect_btn.hide()
+        self.status_label.setText("En attente de votre validation...")
+        self.status_label.setStyleSheet("color: #f97316; font-weight: bold;")
+        
+        # Start polling for completion
+        self.poll_timer = QTimer()
+        self.poll_timer.timeout.connect(self.check_auth_completion)
+        self.poll_timer.start(3000)  # Check every 3 seconds
+    
+    def check_auth_completion(self):
+        """Check if user has completed device authentication."""
+        if not self.device_flow or not self.controller:
+            if self.poll_timer:
+                self.poll_timer.stop()
+            return
+        
+        # Try to complete the flow
+        success = self.controller.complete_device_flow(self.device_flow)
         
         if success:
+            # Stop polling
+            if self.poll_timer:
+                self.poll_timer.stop()
+            
             self.auth_success = True
             self.status_label.setText("✅ Connexion réussie!")
             self.status_label.setStyleSheet("color: #22c55e; font-weight: bold;")
             self.save_btn.setEnabled(True)
+            self.code_container.hide()
+            
             QMessageBox.information(
                 self,
                 "Succès",
-                "Votre compte OneDrive est maintenant connecté.\n"
+                "Votre compte OneDrive est maintenant connecté!\n"
                 "Cliquez sur 'Sauvegarder' pour terminer."
-            )
-        else:
-            self.status_label.setText("❌ Connexion échouée")
-            self.status_label.setStyleSheet("color: #dc2626; font-weight: bold;")
-            self.connect_btn.setEnabled(True)
-            self.email_input.setEnabled(True)
-            self.password_input.setEnabled(True)
-            QMessageBox.critical(
-                self,
-                "Erreur de connexion",
-                "Impossible de se connecter avec ces identifiants.\n\n"
-                "Vérifiez:\n"
-                "• Votre email est correct\n"
-                "• Votre mot de passe est correct\n"
-                "• Votre compte Microsoft existe\n"
-                "• Votre connexion Internet fonctionne\n\n"
-                "Si le problème persiste, contactez votre administrateur."
             )
     
     def save_config(self):
@@ -248,3 +310,9 @@ class OneDriveSetupWizard(QDialog):
             "Les photos seront uploadées automatiquement."
         )
         self.accept()
+    
+    def closeEvent(self, event):
+        """Handle dialog close event."""
+        if self.poll_timer:
+            self.poll_timer.stop()
+        super().closeEvent(event)

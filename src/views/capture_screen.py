@@ -1,18 +1,15 @@
 """Capture screen for taking photos with countdown."""
 import os
 import numpy as np
-from typing import Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QMessageBox
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QSize
-from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor, QIcon, QPen, QRadialGradient
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
 from src.models.photo import Photo
-from src.models import ButtonsConfig
-from src.views.capture_button_overlay import CaptureButtonOverlay
 
 
 class CaptureScreen(QWidget):
@@ -23,12 +20,10 @@ class CaptureScreen(QWidget):
     gallery_requested = pyqtSignal()       # Signal to open gallery
     admin_requested = pyqtSignal()         # Signal to open admin
     
-    def __init__(self, camera_controller: CameraController, photo_controller: PhotoController, buttons_config: Optional[ButtonsConfig] = None):
+    def __init__(self, camera_controller: CameraController, photo_controller: PhotoController):
         super().__init__()
         self.camera = camera_controller
         self.photo_controller = photo_controller
-        self.buttons_config = buttons_config or ButtonsConfig()
-        self.capture_overlay: Optional[CaptureButtonOverlay] = None
         self.selected_frame = None
         self.countdown = 0
         self.is_capturing = False
@@ -71,6 +66,7 @@ class CaptureScreen(QWidget):
         self.capture_btn = QPushButton("")
         self.capture_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.capture_btn.clicked.connect(self.start_countdown)
+        self.update_capture_button_style(185)
 
         # Secondary buttons
         self.choose_frame_btn = QPushButton("")
@@ -107,13 +103,6 @@ class CaptureScreen(QWidget):
         self._style_secondary_buttons()
         self._apply_image_button_styles()
         
-        # Create Miss overlay (hidden by default) - before calling update_capture_button_style
-        self.capture_overlay = CaptureButtonOverlay(self.preview_label)
-        self.capture_overlay.clicked.connect(self.start_countdown)
-        self.capture_overlay.hide()
-        
-        self.update_capture_button_style(185)
-        
         # Place countdown on top of preview
         overlay_layout = QVBoxLayout()
         overlay_layout.setContentsMargins(16, 16, 16, 18)
@@ -134,9 +123,6 @@ class CaptureScreen(QWidget):
         bottom_buttons_layout.addWidget(self.gallery_btn, 0, Qt.AlignmentFlag.AlignBottom)
         bottom_buttons_layout.addStretch()
         overlay_layout.addLayout(bottom_buttons_layout)
-        
-        # Position overlay on top of capture button (will be positioned dynamically)
-        self._position_capture_overlay()
 
         self.preview_label.setLayout(overlay_layout)
         
@@ -157,14 +143,7 @@ class CaptureScreen(QWidget):
         Returns:
             Absolute path
         """
-        buttons_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "assets", "buttons")
-        )
-
-        if not os.path.exists(buttons_dir):
-            buttons_dir = os.path.abspath(os.path.join("assets", "buttons"))
-
-        return os.path.join(buttons_dir, filename).replace("\\", "/")
+        return os.path.abspath(os.path.join("assets", "buttons", filename)).replace("\\", "/")
 
     def _resolve_existing_asset(self, filenames: list[str]) -> str:
         """Resolve first existing asset path from candidate file names.
@@ -186,29 +165,11 @@ class CaptureScreen(QWidget):
         button: QPushButton,
         normal_candidates: list[str],
         pressed_candidates: list[str],
-        fallback_text: str,
-        custom_normal: str = "",
-        custom_pressed: str = ""
+        fallback_text: str
     ):
-        """Set image-based style for a button using normal/pressed assets.
-        
-        Args:
-            button: The button to style
-            normal_candidates: List of candidate filenames for normal state
-            pressed_candidates: List of candidate filenames for pressed state
-            fallback_text: Text to use if no images found
-            custom_normal: Custom path for normal image (takes priority)
-            custom_pressed: Custom path for pressed image (takes priority)
-        """
-        # Check custom paths first
-        normal_path = custom_normal if custom_normal and os.path.exists(custom_normal) else ""
-        pressed_path = custom_pressed if custom_pressed and os.path.exists(custom_pressed) else ""
-        
-        # Fall back to default candidates
-        if not normal_path:
-            normal_path = self._resolve_existing_asset(normal_candidates)
-        if not pressed_path:
-            pressed_path = self._resolve_existing_asset(pressed_candidates)
+        """Set image-based style for a button using normal/pressed assets."""
+        normal_path = self._resolve_existing_asset(normal_candidates)
+        pressed_path = self._resolve_existing_asset(pressed_candidates)
 
         if normal_path and pressed_path:
             button.setText("")
@@ -251,14 +212,11 @@ class CaptureScreen(QWidget):
         """)
 
     def _apply_image_button_styles(self):
-        """Apply image-based style for frame and gallery buttons."""
+        """Apply image-based style for all 3 bottom buttons."""
         self._set_button_image_style(
             self.choose_frame_btn,
             [
                 "choose_frame_normal.png",
-                "changer_de_cadre_normal.png",
-                "changer_cadre_normal.png",
-                "changer-le-cadre_normal.png",
                 "choisis_cadre_normal.png",
                 "choisir_cadre_normal.png",
                 "frame_normal.png",
@@ -267,18 +225,32 @@ class CaptureScreen(QWidget):
             ],
             [
                 "choose_frame_pressed.png",
-                "changer_de_cadre_pressed.png",
-                "changer_cadre_pressed.png",
-                "changer-le-cadre_pressed.png",
                 "choisis_cadre_pressed.png",
                 "choisir_cadre_pressed.png",
                 "frame_pressed.png",
                 "cadre_pressed.png",
                 "choose_frame_down.png"
             ],
-            "Choisis ton cadre",
-            custom_normal=self.buttons_config.choose_frame_normal,
-            custom_pressed=self.buttons_config.choose_frame_pressed
+            "Choisis ton cadre"
+        )
+
+        self._set_button_image_style(
+            self.capture_btn,
+            [
+                "capture_normal.png",
+                "photo_normal.png",
+                "camera_normal.png",
+                "prendre_photo_normal.png",
+                "capture_unpressed.png"
+            ],
+            [
+                "capture_pressed.png",
+                "photo_pressed.png",
+                "camera_pressed.png",
+                "prendre_photo_pressed.png",
+                "capture_down.png"
+            ],
+            "📸"
         )
 
         self._set_button_image_style(
@@ -287,68 +259,16 @@ class CaptureScreen(QWidget):
                 "gallery_normal.png",
                 "galerie_normal.png",
                 "gallerie_normal.png",
-                "gallerie_photos_normal.png",
-                "galerie_photos_normal.png",
                 "gallery_unpressed.png"
             ],
             [
                 "gallery_pressed.png",
                 "galerie_pressed.png",
                 "gallerie_pressed.png",
-                "gallerie_photos_pressed.png",
-                "galerie_photos_pressed.png",
                 "gallery_down.png"
             ],
-            "Galerie",
-            custom_normal=self.buttons_config.gallery_normal,
-            custom_pressed=self.buttons_config.gallery_pressed
+            "Galerie"
         )
-
-    def _apply_capture_image_style(self):
-        """Apply image-based style for the capture button."""
-        self._set_button_image_style(
-            self.capture_btn,
-            [
-                "capture_normal.png",
-                "prendre_une_photo_normal.png",
-                "prendre-une-photo_normal.png",
-                "photo_normal.png",
-                "camera_normal.png",
-                "prendre_photo_normal.png",
-                "capture_unpressed.png"
-            ],
-            [
-                "capture_pressed.png",
-                "prendre_une_photo_pressed.png",
-                "prendre-une-photo_pressed.png",
-                "photo_pressed.png",
-                "camera_pressed.png",
-                "prendre_photo_pressed.png",
-                "capture_down.png"
-            ],
-            "📸",
-            custom_normal=self.buttons_config.capture_normal,
-            custom_pressed=self.buttons_config.capture_pressed
-        )
-
-    def _position_capture_overlay(self):
-        """Position the overlay WebEngine on top of the capture button."""
-        if not self.capture_overlay:
-            return
-        
-        # Get capture button position in preview_label coordinates
-        btn_pos = self.capture_btn.pos()
-        btn_size = self.capture_btn.size()
-        
-        # Center the overlay on the button position
-        overlay_w = self.capture_overlay.width()
-        overlay_h = self.capture_overlay.height()
-        
-        x = btn_pos.x() + (btn_size.width() - overlay_w) // 2
-        y = btn_pos.y() + (btn_size.height() - overlay_h) // 2
-        
-        self.capture_overlay.move(x, y)
-        self.capture_overlay.raise_()
 
     def update_capture_button_style(self, diameter: int):
         """Update round capture button size and style.
@@ -362,62 +282,41 @@ class CaptureScreen(QWidget):
         font_size = max(72, int(diameter * 0.62))
 
         self.capture_btn.setFixedSize(diameter, diameter)
-
-        if self.buttons_config.capture_mode == "miss":
-            # Hide standard button, show overlay
-            self.capture_btn.hide()
-            if self.capture_overlay:
-                self._position_capture_overlay()
-                self.capture_overlay.show()
-        else:
-            # Show standard button, hide overlay
-            self.capture_btn.show()
-            if self.capture_overlay:
-                self.capture_overlay.hide()
-            
-            self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
-            self.capture_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: qlineargradient(
-                        x1: 0, y1: 0,
-                        x2: 1, y2: 1,
-                        stop: 0 #3b82f6,
-                        stop: 1 #1d4ed8
-                    );
-                    color: #ffffff;
-                    border: {border_width}px solid #dbeafe;
-                    border-radius: {radius}px;
-                    font-size: {font_size}px;
-                    padding: 0px;
-                }}
-                QPushButton:hover {{
-                    background-color: qlineargradient(
-                        x1: 0, y1: 0,
-                        x2: 1, y2: 1,
-                        stop: 0 #60a5fa,
-                        stop: 1 #2563eb
-                    );
-                    border: {border_width}px solid #bfdbfe;
-                }}
-                QPushButton:pressed {{
-                    background-color: #1e40af;
-                    border: {border_width}px solid #93c5fd;
-                }}
-                QPushButton:disabled {{
-                    background-color: #94a3b8;
-                    color: #e2e8f0;
-                    border: {border_width}px solid #cbd5e1;
-                }}
-            """)
-            self._apply_capture_image_style()
-
+        self.capture_btn.setFont(QFont("Segoe UI Emoji", font_size, QFont.Weight.Bold))
+        self.capture_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: qlineargradient(
+                    x1: 0, y1: 0,
+                    x2: 1, y2: 1,
+                    stop: 0 #3b82f6,
+                    stop: 1 #1d4ed8
+                );
+                color: #ffffff;
+                border: {border_width}px solid #dbeafe;
+                border-radius: {radius}px;
+                font-size: {font_size}px;
+                padding: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: qlineargradient(
+                    x1: 0, y1: 0,
+                    x2: 1, y2: 1,
+                    stop: 0 #60a5fa,
+                    stop: 1 #2563eb
+                );
+                border: {border_width}px solid #bfdbfe;
+            }}
+            QPushButton:pressed {{
+                background-color: #1e40af;
+                border: {border_width}px solid #93c5fd;
+            }}
+            QPushButton:disabled {{
+                background-color: #94a3b8;
+                color: #e2e8f0;
+                border: {border_width}px solid #cbd5e1;
+            }}
+        """)
         self._apply_image_button_styles()
-
-    def set_buttons_config(self, buttons_config: ButtonsConfig):
-        """Update button config and refresh styles."""
-        self.buttons_config = buttons_config or ButtonsConfig()
-        current_size = self.capture_btn.width() or 185
-        self.update_capture_button_style(current_size)
 
     def _adapt_capture_button_size(self):
         """Adapt capture button size to preview area."""
@@ -529,6 +428,10 @@ class CaptureScreen(QWidget):
         self.countdown = 3
         self.is_capturing = True
         self.capture_btn.setEnabled(False)
+        # Hide all buttons during capture
+        self.choose_frame_btn.hide()
+        self.gallery_btn.hide()
+        self.admin_hotspot_btn.hide()
         self.countdown_timer.start(1000)  # 1 second interval
     
     def update_countdown(self):
@@ -557,6 +460,10 @@ class CaptureScreen(QWidget):
         # Reset UI
         self.capture_btn.setEnabled(True)
         self.is_capturing = False
+        # Show buttons again after capture
+        self.choose_frame_btn.show()
+        self.gallery_btn.show()
+        self.admin_hotspot_btn.show()
     
     def showEvent(self, event):
         """Handle show event."""

@@ -131,13 +131,9 @@ class GalleryScreen(QWidget):
             if not pixmap.isNull():
                 scaled = pixmap.scaled(
                     thumbnail.size(),
-                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                    Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 )
-                if scaled.width() > thumbnail.width() or scaled.height() > thumbnail.height():
-                    x = max(0, (scaled.width() - thumbnail.width()) // 2)
-                    y = max(0, (scaled.height() - thumbnail.height()) // 2)
-                    scaled = scaled.copy(x, y, thumbnail.width(), thumbnail.height())
                 thumbnail.setPixmap(scaled)
 
             row = index // 4
