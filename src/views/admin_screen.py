@@ -288,14 +288,13 @@ class AdminScreen(QWidget):
         normal_layout.addWidget(self.capture_normal_edit)
         self.capture_normal_btn = QPushButton("Parcourir...")
         self.capture_normal_btn.clicked.connect(
-            lambda: self._browse_button_image(self.capture_normal_edit, "capture_normal")
+            lambda checked=False: self._browse_button_image(self.capture_normal_edit, "capture_normal")
         )
         normal_layout.addWidget(self.capture_normal_btn)
         self.capture_normal_clear = QPushButton("✕")
         self.capture_normal_clear.setMaximumWidth(40)
         self.capture_normal_clear.clicked.connect(
-            lambda: (self.capture_normal_edit.setText(""),
-                     setattr(self.config.buttons, "capture_normal", ""))
+            lambda checked=False: self._clear_button_image(self.capture_normal_edit, "capture_normal")
         )
         normal_layout.addWidget(self.capture_normal_clear)
         layout.addLayout(normal_layout)
@@ -309,14 +308,13 @@ class AdminScreen(QWidget):
         pressed_layout.addWidget(self.capture_pressed_edit)
         self.capture_pressed_btn = QPushButton("Parcourir...")
         self.capture_pressed_btn.clicked.connect(
-            lambda: self._browse_button_image(self.capture_pressed_edit, "capture_pressed")
+            lambda checked=False: self._browse_button_image(self.capture_pressed_edit, "capture_pressed")
         )
         pressed_layout.addWidget(self.capture_pressed_btn)
         self.capture_pressed_clear = QPushButton("✕")
         self.capture_pressed_clear.setMaximumWidth(40)
         self.capture_pressed_clear.clicked.connect(
-            lambda: (self.capture_pressed_edit.setText(""),
-                     setattr(self.config.buttons, "capture_pressed", ""))
+            lambda checked=False: self._clear_button_image(self.capture_pressed_edit, "capture_pressed")
         )
         pressed_layout.addWidget(self.capture_pressed_clear)
         layout.addLayout(pressed_layout)
@@ -359,11 +357,15 @@ class AdminScreen(QWidget):
         normal_edit.setPlaceholderText("Aucune image sélectionnée")
         normal_layout.addWidget(normal_edit)
         normal_btn = QPushButton("Parcourir...")
-        normal_btn.clicked.connect(lambda: self._browse_button_image(normal_edit, normal_attr))
+        normal_btn.clicked.connect(
+            lambda checked=False, le=normal_edit, attr=normal_attr: self._browse_button_image(le, attr)
+        )
         normal_layout.addWidget(normal_btn)
         clear_normal = QPushButton("✕")
         clear_normal.setMaximumWidth(40)
-        clear_normal.clicked.connect(lambda: (normal_edit.setText(""), setattr(self.config.buttons, normal_attr, "")))
+        clear_normal.clicked.connect(
+            lambda checked=False, le=normal_edit, attr=normal_attr: self._clear_button_image(le, attr)
+        )
         normal_layout.addWidget(clear_normal)
         layout.addLayout(normal_layout)
         
@@ -375,11 +377,15 @@ class AdminScreen(QWidget):
         pressed_edit.setPlaceholderText("Aucune image sélectionnée")
         pressed_layout.addWidget(pressed_edit)
         pressed_btn = QPushButton("Parcourir...")
-        pressed_btn.clicked.connect(lambda: self._browse_button_image(pressed_edit, pressed_attr))
+        pressed_btn.clicked.connect(
+            lambda checked=False, le=pressed_edit, attr=pressed_attr: self._browse_button_image(le, attr)
+        )
         pressed_layout.addWidget(pressed_btn)
         clear_pressed = QPushButton("✕")
         clear_pressed.setMaximumWidth(40)
-        clear_pressed.clicked.connect(lambda: (pressed_edit.setText(""), setattr(self.config.buttons, pressed_attr, "")))
+        clear_pressed.clicked.connect(
+            lambda checked=False, le=pressed_edit, attr=pressed_attr: self._clear_button_image(le, attr)
+        )
         pressed_layout.addWidget(clear_pressed)
         layout.addLayout(pressed_layout)
         
@@ -397,15 +403,42 @@ class AdminScreen(QWidget):
             line_edit: QLineEdit to update with file path
             config_attr: Config attribute to update
         """
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Sélectionner une image pour le bouton",
-            "",
-            "Images (*.png *.jpg *.jpeg *.bmp *.gif);;Tous les fichiers (*)"
-        )
-        if file_path:
-            line_edit.setText(file_path)
-            setattr(self.config.buttons, config_attr, file_path)
+        try:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self,
+                "Sélectionner une image pour le bouton",
+                "",
+                "Images (*.png *.jpg *.jpeg *.bmp *.gif);;Tous les fichiers (*)"
+            )
+            if file_path:
+                line_edit.setText(file_path)
+                # Ensure buttons config exists
+                if hasattr(self.config, 'buttons'):
+                    setattr(self.config.buttons, config_attr, file_path)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Erreur",
+                f"Erreur lors de la sélection de l'image:\n\n{str(e)}"
+            )
+    
+    def _clear_button_image(self, line_edit: QLineEdit, config_attr: str):
+        """Clear button image selection.
+        
+        Args:
+            line_edit: QLineEdit to clear
+            config_attr: Config attribute to clear
+        """
+        try:
+            line_edit.setText("")
+            if hasattr(self.config, 'buttons'):
+                setattr(self.config.buttons, config_attr, "")
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Erreur",
+                f"Erreur lors de la suppression de l'image:\n\n{str(e)}"
+            )
 
     def create_home_tab(self):
         """Create home screen text settings tab."""
@@ -489,8 +522,6 @@ class AdminScreen(QWidget):
         """Handle OneDrive configuration update from wizard."""
         self.onedrive_client_id.setText(client_id)
         self.onedrive_tenant_id.setText(tenant_id)
-        if client_id:
-            self.onedrive_enabled.setChecked(True)
         QMessageBox.information(
             self,
             "✓ Configuration mise à jour",
