@@ -400,15 +400,17 @@ class AdminScreen(QWidget):
             line_edit: QLineEdit to update with file path
             config_attr: Config attribute to update
         """
+        start_dir = self._get_app_root()
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Sélectionner une image pour le bouton",
-            "",
+            start_dir,
             "Images (*.png *.jpg *.jpeg *.bmp *.gif);;Tous les fichiers (*)"
         )
         if file_path:
-            line_edit.setText(file_path)
-            setattr(self.config.buttons, config_attr, file_path)
+            relative = self._to_relative_path(file_path)
+            line_edit.setText(relative)
+            setattr(self.config.buttons, config_attr, relative)
 
     def create_home_tab(self):
         """Create home screen text settings tab."""

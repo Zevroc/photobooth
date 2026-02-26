@@ -168,27 +168,47 @@ class CaptureScreen(QWidget):
         Returns:
             Absolute path
         """
-        return os.path.abspath(os.path.join("assets", "buttons", filename)).replace("\\", "/")
+        return os.path.normpath(
+            os.path.join(self._app_root(), "assets", "buttons", filename)
+        ).replace("\\", "/")
+
+    def _app_root(self) -> str:
+        """Return the application root directory (works in frozen EXE too)."""
+        if getattr(sys, "frozen", False):
+            return os.path.dirname(sys.executable)
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
     def _resolve_existing_asset(self, filenames: list[str]) -> str:
         """Resolve first existing asset path from candidate file names.
 
         Args:
-            filenames: Candidate file names in priority order (may be absolute paths)
+            filenames: Candidate file names in priority order.
+                       Each entry may be an absolute path, a relative path
+                       (e.g. assets/buttons/foo.png) or a bare filename.
 
         Returns:
             Absolute path of first existing asset or empty string
         """
+        app_root = self._app_root()
         for filename in filenames:
             if not filename:
                 continue
+            # 1. Absolute path
             if os.path.isabs(filename):
                 if os.path.exists(filename):
                     return filename.replace("\\", "/")
-            else:
-                asset_path = self._assets_path(filename)
-                if os.path.exists(asset_path):
-                    return asset_path
+                continue
+            # 2. Relative path that already contains a directory separator
+            #    (e.g. "assets/buttons/capture_normal.png")
+            if os.sep in filename or "/" in filename:
+                full = os.path.normpath(os.path.join(app_root, filename))
+                if os.path.exists(full):
+                    return full.replace("\\", "/")
+                continue
+            # 3. Bare filename → look inside assets/buttons/
+            asset_path = self._assets_path(filename)
+            if os.path.exists(asset_path):
+                return asset_path
         return ""
 
     def _set_button_image_style(
