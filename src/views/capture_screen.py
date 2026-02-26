@@ -484,7 +484,7 @@ class CaptureScreen(QWidget):
     
     def start_countdown(self):
         """Start the countdown before capture."""
-        self.countdown = 3
+        self.countdown = 4
         self.is_capturing = True
         self.capture_btn.setEnabled(False)
         # Hide all buttons during capture
