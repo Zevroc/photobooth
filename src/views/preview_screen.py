@@ -273,48 +273,32 @@ class PreviewScreen(QWidget):
         layout.addLayout(actions_layout)
         self.actions_layout = actions_layout
         
-        # Bottom buttons
+        # Bottom button
         bottom_layout = QHBoxLayout()
-        bottom_layout.setSpacing(20)
-        
-        # Retake button
-        retake_btn = QPushButton("↺ Reprendre la photo")
-        retake_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
-        retake_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #1e293b;
-                color: #f8fafc;
-                border: none;
-                border-radius: 12px;
-                padding: 14px 24px;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-            }
-        """)
-        retake_btn.clicked.connect(self.retake_requested.emit)
-        bottom_layout.addWidget(retake_btn)
-        
         bottom_layout.addStretch()
         
-        # Done button
-        done_btn = QPushButton("✅ Valider")
-        done_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        done_btn.setStyleSheet("""
+        new_photo_btn = QPushButton("📸 Prendre une nouvelle photo !")
+        new_photo_btn.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        new_photo_btn.setMinimumHeight(72)
+        new_photo_btn.setStyleSheet("""
             QPushButton {
                 background-color: #2563eb;
                 color: #ffffff;
                 border: none;
-                border-radius: 12px;
-                padding: 16px 36px;
+                border-radius: 16px;
+                padding: 18px 48px;
             }
             QPushButton:hover {
                 background-color: #1d4ed8;
             }
+            QPushButton:pressed {
+                background-color: #1e40af;
+            }
         """)
-        done_btn.clicked.connect(self.done.emit)
-        bottom_layout.addWidget(done_btn)
+        new_photo_btn.clicked.connect(self.retake_requested.emit)
+        bottom_layout.addWidget(new_photo_btn)
         
+        bottom_layout.addStretch()
         layout.addLayout(bottom_layout)
         
         self.setLayout(layout)
