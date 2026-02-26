@@ -123,6 +123,7 @@ class PhotoboothApp(QMainWindow):
         # Create screens
         self.home_screen = HomeScreen()
         self.capture_screen = CaptureScreen(self.camera_controller, self.photo_controller)
+        self.capture_screen.set_buttons_config(self.config.buttons)
         self.gallery_screen = GalleryScreen()
         self.preview_screen = PreviewScreen()
         self.admin_screen = AdminScreen(self.config)

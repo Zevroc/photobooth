@@ -5,8 +5,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QMessageBox
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QImage, QPixmap, QFont, QPainter, QColor
+from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
+from PyQt6.QtGui import QIcon, QImage, QPixmap, QFont, QPainter, QColor
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
 from src.models.photo import Photo
@@ -133,8 +133,8 @@ class CaptureScreen(QWidget):
 
     def _style_secondary_buttons(self):
         """Apply style to secondary bottom buttons."""
-        self.choose_frame_btn.setFixedSize(220, 76)
-        self.gallery_btn.setFixedSize(220, 76)
+        self.choose_frame_btn.setFixedSize(185, 185)
+        self.gallery_btn.setFixedSize(185, 185)
 
     def _assets_path(self, filename: str) -> str:
         """Build absolute path for button assets.
@@ -181,21 +181,26 @@ class CaptureScreen(QWidget):
 
         if normal_path and pressed_path:
             button.setText("")
-            button.setStyleSheet(f"""
-                QPushButton {{
+            icon = QIcon()
+            icon.addPixmap(QPixmap(normal_path), QIcon.Mode.Normal)
+            icon.addPixmap(QPixmap(pressed_path), QIcon.Mode.Active)
+            icon.addPixmap(QPixmap(pressed_path), QIcon.Mode.Disabled)
+            button.setIcon(icon)
+            btn_size = button.size()
+            button.setIconSize(QSize(btn_size.width(), btn_size.height()))
+            button.setStyleSheet("""
+                QPushButton {
                     border: none;
                     background: transparent;
-                    border-image: url({normal_path}) 0 0 0 0 stretch stretch;
-                }}
-                QPushButton:hover {{
-                    border-image: url({normal_path}) 0 0 0 0 stretch stretch;
-                }}
-                QPushButton:pressed {{
-                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
-                }}
-                QPushButton:disabled {{
-                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
-                }}
+                }
+                QPushButton:hover {
+                    background: rgba(255,255,255,20);
+                    border-radius: 14px;
+                }
+                QPushButton:pressed {
+                    background: rgba(0,0,0,30);
+                    border-radius: 14px;
+                }
             """)
             return
 
