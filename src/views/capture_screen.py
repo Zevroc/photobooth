@@ -218,37 +218,24 @@ class CaptureScreen(QWidget):
         pressed_candidates: list[str],
         fallback_text: str
     ):
-        """Set image-based style for a button using normal/pressed assets.
-
-        Uses the Qt ``image:`` property which is compatible with border-radius
-        and scales the image to fit the button while preserving aspect ratio.
-        Only the normal image is required; the pressed image falls back to the
-        normal one when not found.
-        """
+        """Set image-based style for a button using normal/pressed assets."""
         normal_path = self._resolve_existing_asset(normal_candidates)
-        # Pressed is optional — fall back to normal if not found
-        pressed_path = self._resolve_existing_asset(pressed_candidates) or normal_path
+        pressed_path = self._resolve_existing_asset(pressed_candidates)
 
-        if normal_path:
+        if normal_path and pressed_path:
             button.setText("")
             button.setIcon(QIcon())
             button.setStyleSheet(f"""
                 QPushButton {{
                     border: none;
                     background: transparent;
-                    border-radius: 0px;
-                    padding: 0px;
-                    image: url("{normal_path}");
-                }}
-                QPushButton:hover {{
-                    background: transparent;
+                    border-image: url({normal_path}) 0 0 0 0 stretch stretch;
                 }}
                 QPushButton:pressed {{
-                    image: url("{pressed_path}");
+                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
                 }}
                 QPushButton:disabled {{
-                    image: url("{pressed_path}");
-                    opacity: 0.5;
+                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
                 }}
             """)
             return
