@@ -744,6 +744,7 @@ class AdminScreen(QWidget):
         self.config.start_fullscreen = self.start_fullscreen_check.isChecked()
         self.config.show_no_frame_option = self.show_no_frame_option_check.isChecked()
         self.config.shutter_sound_path = self.shutter_sound_edit.text().strip()
+        self.config.countdown_sound_path = self.countdown_sound_edit.text().strip()
         
         # Save to file
         self.config.save()
@@ -853,6 +854,22 @@ class AdminScreen(QWidget):
         file_layout.addWidget(clear_btn)
         sound_layout.addLayout(file_layout)
         
+        # Countdown sound file selector
+        countdown_layout = QHBoxLayout()
+        countdown_layout.addWidget(QLabel("Son du décompte:"))
+        self.countdown_sound_edit = QLineEdit(self.config.countdown_sound_path)
+        self.countdown_sound_edit.setReadOnly(True)
+        self.countdown_sound_edit.setPlaceholderText("assets/sounds/beep.wav")
+        countdown_layout.addWidget(self.countdown_sound_edit)
+        browse_countdown_btn = QPushButton("Parcourir...")
+        browse_countdown_btn.clicked.connect(self.browse_countdown_sound)
+        countdown_layout.addWidget(browse_countdown_btn)
+        clear_countdown_btn = QPushButton("✕")
+        clear_countdown_btn.setMaximumWidth(40)
+        clear_countdown_btn.clicked.connect(lambda: self.countdown_sound_edit.setText(""))
+        countdown_layout.addWidget(clear_countdown_btn)
+        sound_layout.addLayout(countdown_layout)
+        
         test_sound_btn = QPushButton("🔊 Tester le son de l'obturateur")
         test_sound_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Medium))
         test_sound_btn.setMinimumHeight(50)
@@ -874,6 +891,27 @@ class AdminScreen(QWidget):
         test_sound_btn.clicked.connect(self.test_shutter_sound)
         sound_layout.addWidget(test_sound_btn)
         
+        test_countdown_btn = QPushButton("🔊 Tester le son du décompte")
+        test_countdown_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Medium))
+        test_countdown_btn.setMinimumHeight(50)
+        test_countdown_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #ec4899;
+                color: #ffffff;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 15px;
+            }
+            QPushButton:hover {
+                background-color: #db2777;
+            }
+            QPushButton:pressed {
+                background-color: #be185d;
+            }
+        """)
+        test_countdown_btn.clicked.connect(self.test_countdown_sound)
+        sound_layout.addWidget(test_countdown_btn)
+        
         self.sound_test_label = QLabel()
         self.sound_test_label.setStyleSheet("color: #64748b; font-size: 10px; text-align: center;")
         self.sound_test_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -886,19 +924,22 @@ class AdminScreen(QWidget):
         widget.setLayout(layout)
         return widget
     
-    def test_shutter_sound(self):
-        """Play the shutter sound for testing."""
+    def test_countdown_sound(self):
+        """Play the countdown sound for testing."""
         try:
             import winsound
 
-            sound_path = self.shutter_sound_edit.text().strip() or "assets/sounds/shutter.wav"
+            sound_path = self.countdown_sound_edit.text().strip() or "assets/sounds/beep.wav"
             sound_path = self._resolve_resource_path(sound_path)
             
             if os.path.exists(sound_path):
-                winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
-                self.sound_test_label.setText("✅ Son en cours de lecture...")
+                # Play 3 times like in countdown
+                for i in range(3):
+                    winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
+                    QTimer.singleShot(300, lambda: None)  # Brief delay between beeps
+                self.sound_test_label.setText("✅ Décompte en cours de lecture (3 bips)...")
                 self.sound_test_label.setStyleSheet("color: #22c55e; font-size: 11px;")
-                QTimer.singleShot(2000, lambda: self.sound_test_label.setText(""))
+                QTimer.singleShot(3000, lambda: self.sound_test_label.setText(""))
             else:
                 self.sound_test_label.setText(f"❌ Fichier non trouvé: {sound_path}")
                 self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
@@ -909,17 +950,17 @@ class AdminScreen(QWidget):
             self.sound_test_label.setText(f"❌ Erreur: {str(e)[:50]}")
             self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
 
-    def browse_shutter_sound(self):
-        """Browse for a custom shutter sound file."""
+    def browse_countdown_sound(self):
+        """Browse for a custom countdown sound file."""
         start_dir = self._get_app_root()
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Sélectionner un son d'obturateur",
+            "Sélectionner un son de décompte",
             start_dir,
             "Audio WAV (*.wav)"
         )
         if file_path:
-            self.shutter_sound_edit.setText(self._to_relative_path(file_path))
+            self.countdown_sound_edit.setText(self._to_relative_path(file_path))
 
     def _get_app_root(self) -> str:
         """Return the application root directory."""

@@ -29,6 +29,7 @@
     "save_to_disk": true,
     "photos_directory": "assets/photos",
     "shutter_sound_path": "assets/sounds/shutter.wav",
+    "countdown_sound_path": "assets/sounds/beep.wav",
     "home_title": "Bienvenue au Photobooth!",
     "home_subtitle": "Choisissez votre cadre préféré",
     "home_start_button_text": "Commencer ➔",

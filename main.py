@@ -127,6 +127,9 @@ class PhotoboothApp(QMainWindow):
         self.capture_screen.set_shutter_sound_path(
             getattr(self.config, "shutter_sound_path", "assets/sounds/shutter.wav")
         )
+        self.capture_screen.set_countdown_sound_path(
+            getattr(self.config, "countdown_sound_path", "assets/sounds/beep.wav")
+        )
         self.gallery_screen = GalleryScreen()
         self.preview_screen = PreviewScreen()
         self.admin_screen = AdminScreen(self.config)
@@ -261,6 +264,9 @@ class PhotoboothApp(QMainWindow):
         self.capture_screen.set_buttons_config(self.config.buttons)
         self.capture_screen.set_shutter_sound_path(
             getattr(self.config, "shutter_sound_path", "assets/sounds/shutter.wav")
+        )
+        self.capture_screen.set_countdown_sound_path(
+            getattr(self.config, "countdown_sound_path", "assets/sounds/beep.wav")
         )
 
         # Update service controllers

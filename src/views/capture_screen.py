@@ -30,6 +30,7 @@ class CaptureScreen(QWidget):
         self.selected_frame = None
         self.buttons_config = None
         self.shutter_sound_path = ""
+        self.countdown_sound_path = ""
         self.countdown = 0
         self.is_capturing = False
         
@@ -389,6 +390,10 @@ class CaptureScreen(QWidget):
         """Update shutter sound path from configuration."""
         self.shutter_sound_path = sound_path or ""
 
+    def set_countdown_sound_path(self, sound_path: str):
+        """Update countdown sound path from configuration."""
+        self.countdown_sound_path = sound_path or ""
+
     def start_camera(self):
         """Start the camera preview."""
         if not self.camera.is_active:
@@ -493,6 +498,10 @@ class CaptureScreen(QWidget):
         """Update countdown display."""
         self.countdown -= 1
         
+        # Play countdown beep on 3, 2, 1
+        if self.countdown in (3, 2, 1):
+            self._play_countdown_sound()
+        
         if self.countdown > 0:
             return
         else:
@@ -564,3 +573,19 @@ class CaptureScreen(QWidget):
         if os.path.isabs(path):
             return path
         return os.path.abspath(os.path.join(self._get_app_root(), path))
+
+    def _play_countdown_sound(self):
+        """Play countdown beep sound."""
+        try:
+            if sys.platform != "win32":
+                return
+
+            sound_path = self.countdown_sound_path or os.path.join("assets", "sounds", "beep.wav")
+            sound_path = self._resolve_resource_path(sound_path)
+            if os.path.exists(sound_path):
+                winsound.PlaySound(
+                    sound_path,
+                    winsound.SND_FILENAME | winsound.SND_ASYNC
+                )
+        except Exception:
+            pass
