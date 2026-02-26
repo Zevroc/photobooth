@@ -924,6 +924,29 @@ class AdminScreen(QWidget):
         widget.setLayout(layout)
         return widget
     
+    def test_shutter_sound(self):
+        """Play the shutter sound for testing."""
+        try:
+            import winsound
+
+            sound_path = self.shutter_sound_edit.text().strip() or "assets/sounds/shutter.wav"
+            sound_path = self._resolve_resource_path(sound_path)
+            
+            if os.path.exists(sound_path):
+                winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
+                self.sound_test_label.setText("✅ Son de l'obturateur en cours de lecture...")
+                self.sound_test_label.setStyleSheet("color: #22c55e; font-size: 11px;")
+                QTimer.singleShot(1000, lambda: self.sound_test_label.setText(""))
+            else:
+                self.sound_test_label.setText(f"❌ Fichier non trouvé: {sound_path}")
+                self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
+        except ImportError:
+            self.sound_test_label.setText("❌ winsound non disponible (Windows uniquement)")
+            self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
+        except Exception as e:
+            self.sound_test_label.setText(f"❌ Erreur: {str(e)[:50]}")
+            self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
+    
     def test_countdown_sound(self):
         """Play the countdown sound for testing."""
         try:
