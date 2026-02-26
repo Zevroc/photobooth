@@ -37,18 +37,18 @@ class OneDriveController:
             )
         return self._msal_app
 
-    def start_device_flow(self, scopes: Optional[list[str]] = None) -> Optional[dict]:
+    def start_device_flow(self, scopes: Optional[list[str]] = None) -> tuple[Optional[dict], Optional[str]]:
         """Start OAuth device code flow and return flow details.
 
         Args:
             scopes: Optional list of Graph scopes
 
         Returns:
-            Flow dictionary containing `user_code`, `verification_uri`, etc.
-            or None if flow initialization fails.
+            Tuple of (flow_dict, error_message). If successful, error_message is None.
+            If failed, flow_dict is None and error_message contains diagnostic info.
         """
         if not self.client_id:
-            return None
+            return None, "Client ID non configuré"
 
         requested_scopes = scopes or ["Files.ReadWrite", "offline_access", "User.Read"]
 
@@ -56,14 +56,56 @@ class OneDriveController:
             app = self._get_msal_app()
             flow = app.initiate_device_flow(scopes=requested_scopes)
             if not flow or "user_code" not in flow:
-                return None
-            return flow
+                error_detail = flow.get("error_description", "Réponse invalide") if isinstance(flow, dict) else "Réponse vide"
+                return None, f"Échec de génération du code: {error_detail}"
+            return flow, None
+        except requests.exceptions.ConnectionError as e:
+            error_msg = (
+                f"Erreur de connexion réseau: {str(e)[:100]}\n\n"
+                f"Diagnostic:\n"
+                f"• Vérifiez votre connexion Internet\n"
+                f"• Proxy d'entreprise? Configurez les variables HTTP_PROXY/HTTPS_PROXY\n"
+                f"• Pare-feu bloquant login.microsoftonline.com?\n\n"
+                f"Authority: {self._get_authority()}"
+            )
+            print(f"\n❌ {error_msg}")
+            return None, error_msg
+        except requests.exceptions.SSLError as e:
+            error_msg = (
+                f"Erreur SSL/TLS: {str(e)[:100]}\n\n"
+                f"Diagnostic:\n"
+                f"• Certificat SSL invalide ou expiré\n"
+                f"• Proxy avec inspection SSL (MITM)\n"
+                f"• Horloge système incorrecte\n\n"
+                f"Authority: {self._get_authority()}"
+            )
+            print(f"\n❌ {error_msg}")
+            return None, error_msg
+        except requests.exceptions.Timeout as e:
+            error_msg = (
+                f"Timeout de connexion: {str(e)[:100]}\n\n"
+                f"Diagnostic:\n"
+                f"• Connexion Internet lente ou instable\n"
+                f"• Proxy lent\n"
+                f"• Services Microsoft inaccessibles\n\n"
+                f"Authority: {self._get_authority()}"
+            )
+            print(f"\n❌ {error_msg}")
+            return None, error_msg
         except Exception as e:
-            print(f"\n❌ OneDrive Device Flow Error: {e}")
-            print(f"   Diagnostic: Vérifiez votre connexion Internet et les paramètres proxy")
-            print(f"   Authority: {self._get_authority()}")
-            print(f"   Client ID: {self.client_id[:20]}..." if self.client_id else "Client ID: Not set")
-            return None
+            error_msg = (
+                f"Erreur inattendue: {type(e).__name__}: {str(e)[:150]}\n\n"
+                f"Diagnostic:\n"
+                f"• Vérifiez les logs de la console pour plus de détails\n"
+                f"• Proxy d'entreprise mal configuré?\n"
+                f"• Pare-feu bloquant l'accès\n\n"
+                f"Authority: {self._get_authority()}\n"
+                f"Client ID: {self.client_id[:20]}..." if self.client_id else "Client ID: Non configuré"
+            )
+            print(f"\n❌ {error_msg}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            return None, error_msg
 
     def complete_device_flow(self, flow: dict) -> bool:
         """Complete OAuth device flow and store access token.

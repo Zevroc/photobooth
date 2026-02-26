@@ -263,17 +263,19 @@ class OneDriveSetupWizard(QDialog):
         )
         
         # Start device flow
-        self.device_flow = self.controller.start_device_flow()
+        self.device_flow, error_msg = self.controller.start_device_flow()
         
-        if not self.device_flow or "user_code" not in self.device_flow:
+        if not self.device_flow or error_msg:
             self.status_label.setText("❌ Erreur de génération du code")
             self.status_label.setStyleSheet("color: #dc2626; font-weight: bold;")
             self.connect_btn.setEnabled(True)
+            self.interactive_btn.setEnabled(True)
+            
+            error_detail = error_msg or "Impossible de générer le code de connexion."
             QMessageBox.critical(
                 self,
-                "Erreur",
-                "Impossible de générer le code de connexion.\n"
-                "Vérifiez votre connexion Internet."
+                "Erreur de connexion OneDrive",
+                error_detail
             )
             return
         
