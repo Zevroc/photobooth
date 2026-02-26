@@ -29,6 +29,7 @@ class CaptureScreen(QWidget):
         self.photo_controller = photo_controller
         self.selected_frame = None
         self.buttons_config = None
+        self.shutter_sound_path = ""
         self.countdown = 0
         self.is_capturing = False
         
@@ -384,6 +385,10 @@ class CaptureScreen(QWidget):
         self.buttons_config = buttons_config
         self._apply_image_button_styles()
 
+    def set_shutter_sound_path(self, sound_path: str):
+        """Update shutter sound path from configuration."""
+        self.shutter_sound_path = sound_path or ""
+
     def start_camera(self):
         """Start the camera preview."""
         if not self.camera.is_active:
@@ -534,9 +539,8 @@ class CaptureScreen(QWidget):
             if sys.platform != "win32":
                 return
 
-            sound_path = os.path.abspath(
-                os.path.join("assets", "sounds", "shutter.wav")
-            )
+            sound_path = self.shutter_sound_path or os.path.join("assets", "sounds", "shutter.wav")
+            sound_path = self._resolve_resource_path(sound_path)
             if os.path.exists(sound_path):
                 winsound.PlaySound(
                     sound_path,
@@ -546,3 +550,17 @@ class CaptureScreen(QWidget):
                 winsound.MessageBeep(winsound.MB_OK)
         except Exception:
             pass
+
+    def _get_app_root(self) -> str:
+        """Return the application root directory."""
+        if getattr(sys, "frozen", False):
+            return os.path.dirname(sys.executable)
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+    def _resolve_resource_path(self, path: str) -> str:
+        """Resolve a resource path relative to the app root when needed."""
+        if not path:
+            return ""
+        if os.path.isabs(path):
+            return path
+        return os.path.abspath(os.path.join(self._get_app_root(), path))

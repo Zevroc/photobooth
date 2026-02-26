@@ -1,4 +1,6 @@
 """Admin screen for application settings."""
+import os
+import sys
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QLineEdit, QComboBox, QCheckBox,
@@ -741,6 +743,7 @@ class AdminScreen(QWidget):
         self.config.preview_title = self.preview_title_edit.text().strip() or "Votre Photo!"
         self.config.start_fullscreen = self.start_fullscreen_check.isChecked()
         self.config.show_no_frame_option = self.show_no_frame_option_check.isChecked()
+        self.config.shutter_sound_path = self.shutter_sound_edit.text().strip()
         
         # Save to file
         self.config.save()
@@ -834,6 +837,21 @@ class AdminScreen(QWidget):
         info_label.setWordWrap(True)
         info_label.setStyleSheet("color: #64748b; font-size: 11px;")
         sound_layout.addWidget(info_label)
+
+        file_layout = QHBoxLayout()
+        file_layout.addWidget(QLabel("Fichier WAV:"))
+        self.shutter_sound_edit = QLineEdit(self.config.shutter_sound_path)
+        self.shutter_sound_edit.setReadOnly(True)
+        self.shutter_sound_edit.setPlaceholderText("assets/sounds/shutter.wav")
+        file_layout.addWidget(self.shutter_sound_edit)
+        browse_btn = QPushButton("Parcourir...")
+        browse_btn.clicked.connect(self.browse_shutter_sound)
+        file_layout.addWidget(browse_btn)
+        clear_btn = QPushButton("✕")
+        clear_btn.setMaximumWidth(40)
+        clear_btn.clicked.connect(lambda: self.shutter_sound_edit.setText(""))
+        file_layout.addWidget(clear_btn)
+        sound_layout.addLayout(file_layout)
         
         test_sound_btn = QPushButton("🔊 Tester le son de l'obturateur")
         test_sound_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Medium))
@@ -871,15 +889,10 @@ class AdminScreen(QWidget):
     def test_shutter_sound(self):
         """Play the shutter sound for testing."""
         try:
-            import os
             import winsound
-            
-            # Get path to shutter sound
-            sound_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                "assets", "sounds", "shutter.wav"
-            )
-            sound_path = os.path.abspath(sound_path)
+
+            sound_path = self.shutter_sound_edit.text().strip() or "assets/sounds/shutter.wav"
+            sound_path = self._resolve_resource_path(sound_path)
             
             if os.path.exists(sound_path):
                 winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
@@ -895,3 +908,41 @@ class AdminScreen(QWidget):
         except Exception as e:
             self.sound_test_label.setText(f"❌ Erreur: {str(e)[:50]}")
             self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
+
+    def browse_shutter_sound(self):
+        """Browse for a custom shutter sound file."""
+        start_dir = self._get_app_root()
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Sélectionner un son d'obturateur",
+            start_dir,
+            "Audio WAV (*.wav)"
+        )
+        if file_path:
+            self.shutter_sound_edit.setText(self._to_relative_path(file_path))
+
+    def _get_app_root(self) -> str:
+        """Return the application root directory."""
+        if getattr(sys, "frozen", False):
+            return os.path.dirname(sys.executable)
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+    def _resolve_resource_path(self, path: str) -> str:
+        """Resolve a resource path relative to the app root when needed."""
+        if not path:
+            return ""
+        if os.path.isabs(path):
+            return path
+        return os.path.abspath(os.path.join(self._get_app_root(), path))
+
+    def _to_relative_path(self, path: str) -> str:
+        """Return a path relative to app root when possible."""
+        app_root = self._get_app_root()
+        try:
+            relative = os.path.relpath(path, app_root)
+        except ValueError:
+            return path
+
+        if relative.startswith(".."):
+            return path
+        return relative.replace("\\", "/")

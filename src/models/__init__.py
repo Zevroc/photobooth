@@ -66,6 +66,7 @@ class AppConfig:
     available_frames: List[str]
     save_to_disk: bool = True
     photos_directory: str = "assets/photos"
+    shutter_sound_path: str = "assets/sounds/shutter.wav"
     home_title: str = "Bienvenue au Photobooth!"
     home_subtitle: str = "Choisissez votre cadre préféré"
     preview_title: str = "Votre Photo!"
@@ -89,6 +90,7 @@ class AppConfig:
                     available_frames=data.get('available_frames', []),
                     save_to_disk=data.get('save_to_disk', True),
                     photos_directory=data.get('photos_directory', 'assets/photos'),
+                    shutter_sound_path=data.get('shutter_sound_path', 'assets/sounds/shutter.wav'),
                     home_title=data.get('home_title', 'Bienvenue au Photobooth!'),
                     home_subtitle=data.get('home_subtitle', 'Choisissez votre cadre préféré'),
                     preview_title=data.get('preview_title', 'Votre Photo!'),
@@ -108,6 +110,7 @@ class AppConfig:
                 available_frames=[],
                 save_to_disk=True,
                 photos_directory='assets/photos',
+                shutter_sound_path='assets/sounds/shutter.wav',
                 home_title='Bienvenue au Photobooth!',
                 home_subtitle='Choisissez votre cadre préféré',
                 preview_title='Votre Photo!',
@@ -130,6 +133,7 @@ class AppConfig:
                 'available_frames': self.available_frames,
                 'save_to_disk': self.save_to_disk,
                 'photos_directory': self.photos_directory,
+                'shutter_sound_path': self.shutter_sound_path,
                 'home_title': self.home_title,
                 'home_subtitle': self.home_subtitle,
                 'preview_title': self.preview_title,

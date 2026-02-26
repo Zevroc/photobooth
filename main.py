@@ -124,6 +124,9 @@ class PhotoboothApp(QMainWindow):
         self.home_screen = HomeScreen()
         self.capture_screen = CaptureScreen(self.camera_controller, self.photo_controller)
         self.capture_screen.set_buttons_config(self.config.buttons)
+        self.capture_screen.set_shutter_sound_path(
+            getattr(self.config, "shutter_sound_path", "assets/sounds/shutter.wav")
+        )
         self.gallery_screen = GalleryScreen()
         self.preview_screen = PreviewScreen()
         self.admin_screen = AdminScreen(self.config)
@@ -256,6 +259,9 @@ class PhotoboothApp(QMainWindow):
         
         # Update button configuration
         self.capture_screen.set_buttons_config(self.config.buttons)
+        self.capture_screen.set_shutter_sound_path(
+            getattr(self.config, "shutter_sound_path", "assets/sounds/shutter.wav")
+        )
 
         # Update service controllers
         self.onedrive_controller = OneDriveController(
