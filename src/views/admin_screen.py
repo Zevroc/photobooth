@@ -271,15 +271,6 @@ class AdminScreen(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(10)
 
-        self.capture_generated_check = QCheckBox(
-            "Utiliser le bouton Photobooth Miss (généré)"
-        )
-        self.capture_generated_check.setChecked(
-            getattr(self.config.buttons, "capture_mode", "image") == "miss"
-        )
-        self.capture_generated_check.stateChanged.connect(self._toggle_capture_selectors)
-        layout.addWidget(self.capture_generated_check)
-
         # Normal image selector
         normal_layout = QHBoxLayout()
         normal_layout.addWidget(QLabel("État normal:"))
@@ -324,21 +315,7 @@ class AdminScreen(QWidget):
 
         group.setLayout(layout)
         parent_layout.addWidget(group)
-        self._toggle_capture_selectors()
 
-    def _toggle_capture_selectors(self):
-        """Enable/disable capture image selectors based on generated toggle."""
-        use_generated = self.capture_generated_check.isChecked()
-        for widget in (
-            self.capture_normal_edit,
-            self.capture_pressed_edit,
-            self.capture_normal_btn,
-            self.capture_pressed_btn,
-            self.capture_normal_clear,
-            self.capture_pressed_clear,
-        ):
-            widget.setEnabled(not use_generated)
-    
     def _create_button_selector(self, parent_layout: QVBoxLayout, label: str, normal_attr: str, pressed_attr: str):
         """Create a button image selector pair (normal + pressed).
         
@@ -644,9 +621,6 @@ class AdminScreen(QWidget):
         self.config.email.use_tls = self.email_tls.isChecked()
 
         # Update buttons config
-        self.config.buttons.capture_mode = (
-            "miss" if self.capture_generated_check.isChecked() else "image"
-        )
         self.config.buttons.capture_normal = self.capture_normal_edit.text()
         self.config.buttons.capture_pressed = self.capture_pressed_edit.text()
         self.config.buttons.choose_frame_normal = self.choose_frame_normal_edit.text()

@@ -43,7 +43,6 @@ class ButtonsConfig:
     choose_frame_pressed: str = ""
     gallery_normal: str = ""
     gallery_pressed: str = ""
-    capture_mode: str = "image"
 
 
 @dataclass
