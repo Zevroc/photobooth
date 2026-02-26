@@ -9,19 +9,20 @@ from src.models.photo import Photo
 
 
 class VirtualKeyboardDialog(QDialog):
-    """Full-screen virtual keyboard dialog for touchscreen email input."""
+    """Full-screen virtual keyboard dialog for touchscreen email input (AZERTY)."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, recent_emails: list = None):
         super().__init__(parent)
         self.setWindowTitle("Entrez votre adresse email")
         self.setModal(True)
-        self.setMinimumSize(900, 620)
+        self.setMinimumSize(920, 640)
+        self._recent_emails = recent_emails or []
         self._build_ui()
 
     def _build_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(14)
+        layout.setContentsMargins(30, 24, 30, 24)
+        layout.setSpacing(10)
 
         # Title
         title = QLabel("📧 Entrez votre adresse email")
@@ -29,6 +30,37 @@ class VirtualKeyboardDialog(QDialog):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("color: #0f172a;")
         layout.addWidget(title)
+
+        # Recent emails chips
+        if self._recent_emails:
+            recent_label = QLabel("Emails récents :")
+            recent_label.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+            recent_label.setStyleSheet("color: #475569; margin-left: 4px;")
+            layout.addWidget(recent_label)
+
+            chips_layout = QHBoxLayout()
+            chips_layout.setSpacing(10)
+            chips_layout.addStretch()
+            for email in self._recent_emails:
+                chip = QPushButton(email)
+                chip.setFont(QFont("Segoe UI", 13))
+                chip.setStyleSheet("""
+                    QPushButton {
+                        background-color: #dbeafe;
+                        color: #1d4ed8;
+                        border: 1px solid #93c5fd;
+                        border-radius: 20px;
+                        padding: 8px 20px;
+                        font-weight: 600;
+                    }
+                    QPushButton:pressed {
+                        background-color: #bfdbfe;
+                    }
+                """)
+                chip.clicked.connect(lambda checked, e=email: self._select_recent(e))
+                chips_layout.addWidget(chip)
+            chips_layout.addStretch()
+            layout.addLayout(chips_layout)
 
         # Email input display
         self.email_input = QLineEdit()
@@ -48,9 +80,9 @@ class VirtualKeyboardDialog(QDialog):
         """)
         layout.addWidget(self.email_input)
 
-        layout.addSpacing(6)
+        layout.addSpacing(4)
 
-        # Keyboard rows
+        # Keyboard rows (AZERTY)
         KEY_STYLE = """
             QPushButton {
                 background-color: #ffffff;
@@ -87,9 +119,9 @@ class VirtualKeyboardDialog(QDialog):
 
         rows = [
             ["1","2","3","4","5","6","7","8","9","0","-","_"],
-            ["q","w","e","r","t","y","u","i","o","p","@"],
-            ["a","s","d","f","g","h","j","k","l",".",],
-            ["z","x","c","v","b","n","m","⌫"],
+            ["a","z","e","r","t","y","u","i","o","p","@"],
+            ["q","s","d","f","g","h","j","k","l","m","."],
+            ["w","x","c","v","b","n","⌫"],
         ]
 
         for row in rows:
@@ -109,7 +141,7 @@ class VirtualKeyboardDialog(QDialog):
             row_layout.addStretch()
             layout.addLayout(row_layout)
 
-        # Space + bottom row
+        # Space + clear row
         bottom_row = QHBoxLayout()
         bottom_row.setSpacing(10)
         bottom_row.addStretch()
@@ -184,6 +216,9 @@ class VirtualKeyboardDialog(QDialog):
         self.setLayout(layout)
         self.setStyleSheet("background-color: #f8fafc;")
 
+    def _select_recent(self, email: str):
+        self.email_input.setText(email)
+
     def _type_key(self, key: str):
         self.email_input.setText(self.email_input.text() + key)
 
@@ -214,6 +249,7 @@ class PreviewScreen(QWidget):
         super().__init__()
         self.current_photo = None
         self.saved_path = None
+        self.recent_emails: list = []
         self.init_ui()
     
     def init_ui(self):
@@ -393,10 +429,12 @@ class PreviewScreen(QWidget):
             QMessageBox.warning(self, "Email", "Aucune photo sauvegardée à envoyer.")
             return
 
-        dialog = VirtualKeyboardDialog(self)
+        dialog = VirtualKeyboardDialog(self, recent_emails=self.recent_emails)
         if dialog.exec() == VirtualKeyboardDialog.DialogCode.Accepted:
             email = dialog.get_email()
             if email:
+                if email not in self.recent_emails:
+                    self.recent_emails.append(email)
                 self.email_send_requested.emit(email, self.saved_path)
     
     def on_onedrive_clicked(self):
