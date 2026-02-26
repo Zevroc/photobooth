@@ -1,11 +1,204 @@
 """Preview screen for reviewing and sharing captured photo."""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QMessageBox, QInputDialog
+    QPushButton, QMessageBox, QDialog, QLineEdit
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap, QFont
 from src.models.photo import Photo
+
+
+class VirtualKeyboardDialog(QDialog):
+    """Full-screen virtual keyboard dialog for touchscreen email input."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Entrez votre adresse email")
+        self.setModal(True)
+        self.setMinimumSize(900, 620)
+        self._build_ui()
+
+    def _build_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(14)
+
+        # Title
+        title = QLabel("📧 Entrez votre adresse email")
+        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("color: #0f172a;")
+        layout.addWidget(title)
+
+        # Email input display
+        self.email_input = QLineEdit()
+        self.email_input.setReadOnly(True)
+        self.email_input.setPlaceholderText("exemple@gmail.com")
+        self.email_input.setFont(QFont("Segoe UI", 22))
+        self.email_input.setMinimumHeight(60)
+        self.email_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.email_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #ffffff;
+                color: #0f172a;
+                border: 3px solid #3b82f6;
+                border-radius: 12px;
+                padding: 10px 18px;
+            }
+        """)
+        layout.addWidget(self.email_input)
+
+        layout.addSpacing(6)
+
+        # Keyboard rows
+        KEY_STYLE = """
+            QPushButton {
+                background-color: #ffffff;
+                color: #0f172a;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: 600;
+                min-width: 52px;
+                min-height: 52px;
+            }
+            QPushButton:pressed {
+                background-color: #3b82f6;
+                color: #ffffff;
+                border-color: #2563eb;
+            }
+        """
+        SPECIAL_STYLE = """
+            QPushButton {
+                background-color: #e2e8f0;
+                color: #0f172a;
+                border: 1px solid #94a3b8;
+                border-radius: 8px;
+                font-size: 15px;
+                font-weight: 700;
+                min-width: 72px;
+                min-height: 52px;
+            }
+            QPushButton:pressed {
+                background-color: #64748b;
+                color: #ffffff;
+            }
+        """
+
+        rows = [
+            ["1","2","3","4","5","6","7","8","9","0","-","_"],
+            ["q","w","e","r","t","y","u","i","o","p","@"],
+            ["a","s","d","f","g","h","j","k","l",".",],
+            ["z","x","c","v","b","n","m","⌫"],
+        ]
+
+        for row in rows:
+            row_layout = QHBoxLayout()
+            row_layout.setSpacing(6)
+            row_layout.addStretch()
+            for key in row:
+                btn = QPushButton(key)
+                if key == "⌫":
+                    btn.setStyleSheet(SPECIAL_STYLE)
+                    btn.setMinimumWidth(80)
+                    btn.clicked.connect(self._backspace)
+                else:
+                    btn.setStyleSheet(KEY_STYLE)
+                    btn.clicked.connect(lambda checked, k=key: self._type_key(k))
+                row_layout.addWidget(btn)
+            row_layout.addStretch()
+            layout.addLayout(row_layout)
+
+        # Space + bottom row
+        bottom_row = QHBoxLayout()
+        bottom_row.setSpacing(10)
+        bottom_row.addStretch()
+
+        space_btn = QPushButton("espace")
+        space_btn.setStyleSheet(SPECIAL_STYLE)
+        space_btn.setMinimumWidth(220)
+        space_btn.setMinimumHeight(52)
+        space_btn.clicked.connect(lambda: self._type_key(" "))
+        bottom_row.addWidget(space_btn)
+
+        clear_btn = QPushButton("🗑 Effacer")
+        clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #fee2e2;
+                color: #dc2626;
+                border: 1px solid #fca5a5;
+                border-radius: 8px;
+                font-size: 15px;
+                font-weight: 700;
+                min-width: 110px;
+                min-height: 52px;
+            }
+            QPushButton:pressed { background-color: #fca5a5; }
+        """)
+        clear_btn.clicked.connect(lambda: self.email_input.setText(""))
+        bottom_row.addWidget(clear_btn)
+
+        bottom_row.addStretch()
+        layout.addLayout(bottom_row)
+
+        layout.addSpacing(6)
+
+        # Cancel / Send buttons
+        action_row = QHBoxLayout()
+        action_row.setSpacing(16)
+
+        cancel_btn = QPushButton("✕ Annuler")
+        cancel_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        cancel_btn.setMinimumHeight(58)
+        cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6b7280;
+                color: #ffffff;
+                border: none;
+                border-radius: 12px;
+                padding: 14px 30px;
+            }
+            QPushButton:pressed { background-color: #4b5563; }
+        """)
+        cancel_btn.clicked.connect(self.reject)
+        action_row.addWidget(cancel_btn)
+
+        send_btn = QPushButton("📧 Envoyer")
+        send_btn.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        send_btn.setMinimumHeight(58)
+        send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2563eb;
+                color: #ffffff;
+                border: none;
+                border-radius: 12px;
+                padding: 14px 40px;
+            }
+            QPushButton:pressed { background-color: #1d4ed8; }
+        """)
+        send_btn.clicked.connect(self._on_send)
+        action_row.addWidget(send_btn)
+
+        layout.addLayout(action_row)
+
+        self.setLayout(layout)
+        self.setStyleSheet("background-color: #f8fafc;")
+
+    def _type_key(self, key: str):
+        self.email_input.setText(self.email_input.text() + key)
+
+    def _backspace(self):
+        self.email_input.setText(self.email_input.text()[:-1])
+
+    def _on_send(self):
+        email = self.email_input.text().strip()
+        if not email or "@" not in email:
+            QMessageBox.warning(self, "Email invalide", "Veuillez entrer une adresse email valide.")
+            return
+        self.accept()
+
+    def get_email(self) -> str:
+        return self.email_input.text().strip()
 
 
 class PreviewScreen(QWidget):
@@ -202,21 +395,14 @@ class PreviewScreen(QWidget):
     def on_email_clicked(self):
         """Handle email button click."""
         if not self.saved_path:
-            QMessageBox.warning(
-                self,
-                "Email",
-                "Aucune photo sauvegardée à envoyer."
-            )
+            QMessageBox.warning(self, "Email", "Aucune photo sauvegardée à envoyer.")
             return
 
-        email, ok = QInputDialog.getText(
-            self, 
-            "Envoyer par Email", 
-            "Entrez l'adresse email:"
-        )
-        
-        if ok and email:
-            self.email_send_requested.emit(email.strip(), self.saved_path)
+        dialog = VirtualKeyboardDialog(self)
+        if dialog.exec() == VirtualKeyboardDialog.DialogCode.Accepted:
+            email = dialog.get_email()
+            if email:
+                self.email_send_requested.emit(email, self.saved_path)
     
     def on_onedrive_clicked(self):
         """Handle OneDrive button click."""
