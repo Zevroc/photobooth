@@ -1,26 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from PyInstaller.utils.hooks import collect_all
-import os
-import sysconfig
 
 block_cipher = None
 
 pyqt6_datas, pyqt6_binaries, pyqt6_hiddenimports = collect_all('PyQt6')
-webengine_datas, webengine_binaries, webengine_hiddenimports = collect_all('PyQt6.QtWebEngineCore')
-
-# Add WebEngine resources explicitly
-site_packages = sysconfig.get_paths()['purelib']
-webengine_path = os.path.join(site_packages, 'PyQt6', 'Qt6', 'resources')
-if os.path.exists(webengine_path):
-    webengine_datas.append((webengine_path, 'PyQt6/Qt6/resources'))
-
-extra_binaries = webengine_binaries + pyqt6_binaries
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=extra_binaries,
+    binaries=pyqt6_binaries,
     datas=[
         ('assets', 'assets'),
         ('config', 'config'),
@@ -28,15 +17,12 @@ a = Analysis(
         # This ensures dynamic imports and resource loading work correctly
         ('src', 'src'),
         ('DISTRIBUTION_README.md', '.'),
-    ] + pyqt6_datas + webengine_datas,
+    ] + pyqt6_datas,
     hiddenimports=[
         'PyQt6',
         'PyQt6.QtCore',
         'PyQt6.QtGui',
         'PyQt6.QtWidgets',
-        'PyQt6.QtWebEngineWidgets',
-        'PyQt6.QtWebEngineCore',
-        'PyQt6.QtWebChannel',
         'PyQt6.sip',
         'cv2',
         'PIL',
@@ -61,8 +47,7 @@ a = Analysis(
         'win32print',
         'win32api',
         'win32con',
-        'PyQt6.QtWebEngineProcess',
-    ] + pyqt6_hiddenimports + webengine_hiddenimports,
+    ] + pyqt6_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

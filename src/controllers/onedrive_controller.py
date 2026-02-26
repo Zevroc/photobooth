@@ -59,7 +59,10 @@ class OneDriveController:
                 return None
             return flow
         except Exception as e:
-            print(f"Error starting OneDrive device flow: {e}")
+            print(f"\n❌ OneDrive Device Flow Error: {e}")
+            print(f"   Diagnostic: Vérifiez votre connexion Internet et les paramètres proxy")
+            print(f"   Authority: {self._get_authority()}")
+            print(f"   Client ID: {self.client_id[:20]}..." if self.client_id else "Client ID: Not set")
             return None
 
     def complete_device_flow(self, flow: dict) -> bool:
@@ -83,11 +86,19 @@ class OneDriveController:
                 self.access_token = token
                 return True
 
-            error = result.get("error_description", "Unknown error") if isinstance(result, dict) else "Unknown error"
-            print(f"OneDrive authentication failed: {error}")
+            error_desc = result.get("error_description", "Unknown error") if isinstance(result, dict) else "Unknown error"
+            error_code = result.get("error", "") if isinstance(result, dict) else ""
+            print(f"\n❌ OneDrive Authentication Failed")
+            print(f"   Error Code: {error_code}")
+            print(f"   Message: {error_desc}")
+            print(f"   Diagnostic: Possibilités - timeout réseau, proxy bloquant, firewalled, ou délai expiré")
             return False
         except Exception as e:
-            print(f"Error completing OneDrive device flow: {e}")
+            print(f"\n❌ OneDrive Device Flow Error: {str(e)}")
+            print(f"   Type d'erreur: {type(e).__name__}")
+            print(f"   Diagnostic: Vérifiez votre proxy, pare-feu et connexion réseau")
+            import traceback
+            print(f"   Traceback: {traceback.format_exc()}")
             return False
     
     def authenticate_with_credentials(self, email: str, password: str) -> bool:
@@ -168,12 +179,27 @@ class OneDriveController:
                 self.enabled = True
                 return True
 
-            error = result.get("error_description", "Unknown error") if isinstance(result, dict) else "Unknown error"
-            print(f"OneDrive interactive authentication failed: {error}")
+            error_desc = result.get("error_description", "Unknown error") if isinstance(result, dict) else "Unknown error"
+            error_code = result.get("error", "") if isinstance(result, dict) else ""
+            print(f"\n❌ OneDrive Interactive Authentication Failed")
+            print(f"   Error Code: {error_code}")
+            print(f"   Message: {error_desc}")
+            print(f"   Diagnostic: Si problème de proxy, vérifiez:")
+            print(f"   - Paramètres proxy système")
+            print(f"   - Pare-feu bloq ue login.microsoftonline.com")
+            print(f"   - Certificate révocation checking")
             return False
 
         except Exception as e:
-            print(f"Error during OneDrive interactive authentication: {e}")
+            print(f"\n❌ OneDrive Interactive Authentication Error: {str(e)}")
+            print(f"   Type d'erreur: {type(e).__name__}")
+            print(f"   Diagnostic possibles:")
+            print(f"   - Proxy d'entreprise bloquant la connexion")
+            print(f"   - Timeout (essayez une connexion ultérieurement)")
+            print(f"   - Certificat SSL/TLS invalide")
+            print(f"   - Pas d'accès direct à login.microsoftonline.com")
+            import traceback
+            print(f"   Traceback: {traceback.format_exc()}")
             return False
     
     def upload_photo(self, file_path: str, remote_folder: str = "/Photos/Photobooth") -> bool:
@@ -222,11 +248,24 @@ class OneDriveController:
                 print("OneDrive token expired, retrying authentication...")
                 return self.upload_photo(file_path, remote_folder)
 
-            print(
-                "Error uploading to OneDrive: "
-                f"HTTP {response.status_code} - {response.text[:300]}"
-            )
+            print(f"\n❌ OneDrive Upload Error")
+            print(f"   HTTP Status: {response.status_code}")
+            print(f"   Endpoint: {endpoint}")
+            print(f"   Response: {response.text[:500]}")
+            if response.status_code in (400, 403, 407):
+                print(f"   Diagnostic: Possibilité de problème proxy/authentification")
+            return False
+        except requests.exceptions.ConnectionError as e:
+            print(f"\n❌ OneDrive Connection Error: {str(e)}")
+            print(f"   Diagnostic: Vérifiez votre connexion réseau et proxy d'entreprise")
+            return False
+        except requests.exceptions.Timeout as e:
+            print(f"\n❌ OneDrive Timeout: {str(e)}")
+            print(f"   Diagnostic: Requête expirée (proxy lent ou bloq ué?)")
             return False
         except Exception as e:
-            print(f"Error uploading to OneDrive: {e}")
+            print(f"\n❌ OneDrive Upload Error: {str(e)}")
+            print(f"   Type d'erreur: {type(e).__name__}")
+            import traceback
+            print(f"   Traceback: {traceback.format_exc()}")
             return False

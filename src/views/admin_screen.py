@@ -69,6 +69,7 @@ class AdminScreen(QWidget):
         self.tabs.addTab(self.create_onedrive_tab(), "☁ OneDrive")
         self.tabs.addTab(self.create_email_tab(), "📧 Email")
         self.tabs.addTab(self.create_printer_tab(), "🖨 Imprimante")
+        self.tabs.addTab(self.create_tests_tab(), "🧪 Tests")
         self.tabs.currentChanged.connect(self.on_tab_changed)
         
         layout.addWidget(self.tabs, 1)
@@ -809,3 +810,88 @@ class AdminScreen(QWidget):
         """Handle hide event."""
         super().hideEvent(event)
         self.stop_camera_preview()
+
+    def create_tests_tab(self):
+        """Create tests tab for audio and other functionality."""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
+        
+        # Title
+        title = QLabel("Tests des fonctionnalités")
+        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        layout.addWidget(title)
+        
+        # Sound test section
+        sound_group = QGroupBox("🔊 Audio")
+        sound_layout = QVBoxLayout()
+        
+        info_label = QLabel(
+            "Testez le son de l'obturateur capturé lors d'une photo.\n"
+            "Assurez-vous que vos haut-parleurs sont activés."
+        )
+        info_label.setWordWrap(True)
+        info_label.setStyleSheet("color: #64748b; font-size: 11px;")
+        sound_layout.addWidget(info_label)
+        
+        test_sound_btn = QPushButton("🔊 Tester le son de l'obturateur")
+        test_sound_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Medium))
+        test_sound_btn.setMinimumHeight(50)
+        test_sound_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #8b5cf6;
+                color: #ffffff;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 15px;
+            }
+            QPushButton:hover {
+                background-color: #7c3aed;
+            }
+            QPushButton:pressed {
+                background-color: #6d28d9;
+            }
+        """)
+        test_sound_btn.clicked.connect(self.test_shutter_sound)
+        sound_layout.addWidget(test_sound_btn)
+        
+        self.sound_test_label = QLabel()
+        self.sound_test_label.setStyleSheet("color: #64748b; font-size: 10px; text-align: center;")
+        self.sound_test_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sound_layout.addWidget(self.sound_test_label)
+        
+        sound_group.setLayout(sound_layout)
+        layout.addWidget(sound_group)
+        
+        layout.addStretch()
+        widget.setLayout(layout)
+        return widget
+    
+    def test_shutter_sound(self):
+        """Play the shutter sound for testing."""
+        try:
+            import os
+            import winsound
+            
+            # Get path to shutter sound
+            sound_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                "assets", "sounds", "shutter.wav"
+            )
+            sound_path = os.path.abspath(sound_path)
+            
+            if os.path.exists(sound_path):
+                winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
+                self.sound_test_label.setText("✅ Son en cours de lecture...")
+                self.sound_test_label.setStyleSheet("color: #22c55e; font-size: 11px;")
+                QTimer.singleShot(2000, lambda: self.sound_test_label.setText(""))
+            else:
+                self.sound_test_label.setText(f"❌ Fichier non trouvé: {sound_path}")
+                self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
+        except ImportError:
+            self.sound_test_label.setText("❌ winsound non disponible (Windows uniquement)")
+            self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
+        except Exception as e:
+            self.sound_test_label.setText(f"❌ Erreur: {str(e)[:50]}")
+            self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
