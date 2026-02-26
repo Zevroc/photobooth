@@ -44,30 +44,18 @@ class PrinterConfig:
 
 
 @dataclass
-class ButtonsConfig:
-    """Custom button images configuration."""
-    capture_mode: str = "image"
-    capture_normal: str = ""
-    capture_pressed: str = ""
-    choose_frame_normal: str = ""
-    choose_frame_pressed: str = ""
-    gallery_normal: str = ""
-    gallery_pressed: str = ""
-
-
-@dataclass
 class AppConfig:
     """Application configuration."""
     camera: CameraConfig
     onedrive: OneDriveConfig
     email: EmailConfig
     printer: PrinterConfig
-    buttons: ButtonsConfig
     available_frames: List[str]
     save_to_disk: bool = True
     photos_directory: str = "assets/photos"
     home_title: str = "Bienvenue au Photobooth!"
     home_subtitle: str = "Choisissez votre cadre préféré"
+    preview_title: str = "Votre Photo!"
     home_start_button_text: str = "Commencer ➔"
     start_fullscreen: bool = True
     show_no_frame_option: bool = True
@@ -84,12 +72,12 @@ class AppConfig:
                     onedrive=OneDriveConfig(**data.get('onedrive', {})),
                     email=EmailConfig(**data.get('email', {})),
                     printer=PrinterConfig(**data.get('printer', {})),
-                    buttons=ButtonsConfig(**data.get('buttons', {})),
                     available_frames=data.get('available_frames', []),
                     save_to_disk=data.get('save_to_disk', True),
                     photos_directory=data.get('photos_directory', 'assets/photos'),
                     home_title=data.get('home_title', 'Bienvenue au Photobooth!'),
                     home_subtitle=data.get('home_subtitle', 'Choisissez votre cadre préféré'),
+                    preview_title=data.get('preview_title', 'Votre Photo!'),
                     home_start_button_text=data.get('home_start_button_text', 'Commencer ➔'),
                     start_fullscreen=data.get('start_fullscreen', True),
                     show_no_frame_option=data.get('show_no_frame_option', True),
@@ -102,12 +90,12 @@ class AppConfig:
                 onedrive=OneDriveConfig(),
                 email=EmailConfig(),
                 printer=PrinterConfig(),
-                buttons=ButtonsConfig(),
                 available_frames=[],
                 save_to_disk=True,
                 photos_directory='assets/photos',
                 home_title='Bienvenue au Photobooth!',
                 home_subtitle='Choisissez votre cadre préféré',
+                preview_title='Votre Photo!',
                 home_start_button_text='Commencer ➔',
                 start_fullscreen=True,
                 show_no_frame_option=True,
@@ -123,12 +111,12 @@ class AppConfig:
                 'onedrive': asdict(self.onedrive),
                 'email': asdict(self.email),
                 'printer': asdict(self.printer),
-                'buttons': asdict(self.buttons),
                 'available_frames': self.available_frames,
                 'save_to_disk': self.save_to_disk,
                 'photos_directory': self.photos_directory,
                 'home_title': self.home_title,
                 'home_subtitle': self.home_subtitle,
+                'preview_title': self.preview_title,
                 'home_start_button_text': self.home_start_button_text,
                 'start_fullscreen': self.start_fullscreen,
                 'show_no_frame_option': self.show_no_frame_option,

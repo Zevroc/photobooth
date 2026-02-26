@@ -175,6 +175,7 @@ class PhotoboothApp(QMainWindow):
             self.config.onedrive.enabled,
             self.config.printer.enabled
         )
+        self.preview_screen.set_preview_title(getattr(self.config, 'preview_title', 'Votre Photo!'))
 
         # Reload frames
         self.home_screen.load_frames("assets/frames")
@@ -283,6 +284,7 @@ class PhotoboothApp(QMainWindow):
             self.config.home_start_button_text
         )
         self.home_screen.set_frames_options(self.config.show_no_frame_option)
+        self.preview_screen.set_preview_title(getattr(self.config, 'preview_title', 'Votre Photo!'))
 
         frame_path = self.config.last_selected_frame
         if frame_path and not os.path.exists(frame_path):

@@ -223,11 +223,11 @@ class PreviewScreen(QWidget):
         layout.setSpacing(20)
         
         # Title
-        title = QLabel("Votre Photo!")
-        title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("color: #0f172a;")
-        layout.addWidget(title)
+        self.title_label = QLabel("Votre Photo!")
+        self.title_label.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setStyleSheet("color: #0f172a;")
+        layout.addWidget(self.title_label)
         
         # Photo preview
         self.photo_label = QLabel()
@@ -247,21 +247,24 @@ class PreviewScreen(QWidget):
         
         # Email button
         self.email_btn = QPushButton("📧 Envoyer par email")
-        self.email_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+        self.email_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.email_btn.setMinimumHeight(72)
         self.email_btn.setStyleSheet(self._button_style("#3498db"))
         self.email_btn.clicked.connect(self.on_email_clicked)
         actions_layout.addWidget(self.email_btn)
         
         # OneDrive button
         self.onedrive_btn = QPushButton("☁ Envoyer sur OneDrive")
-        self.onedrive_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+        self.onedrive_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.onedrive_btn.setMinimumHeight(72)
         self.onedrive_btn.setStyleSheet(self._button_style("#0078d4"))
         self.onedrive_btn.clicked.connect(self.on_onedrive_clicked)
         actions_layout.addWidget(self.onedrive_btn)
         
         # Print button
         self.print_btn = QPushButton("🖨 Imprimer la photo")
-        self.print_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Medium))
+        self.print_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.print_btn.setMinimumHeight(72)
         self.print_btn.setStyleSheet(self._button_style("#9b59b6"))
         self.print_btn.clicked.connect(self.on_print_clicked)
         actions_layout.addWidget(self.print_btn)
@@ -317,6 +320,14 @@ class PreviewScreen(QWidget):
         self.setLayout(layout)
         self.setStyleSheet("background-color: #f8fafc;")
 
+    def set_preview_title(self, title: str):
+        """Update the page title label.
+
+        Args:
+            title: New title text
+        """
+        self.title_label.setText(title or "Votre Photo!")
+
     def set_enabled_actions(self, email_enabled: bool, onedrive_enabled: bool, print_enabled: bool):
         """Show/hide sharing actions based on enabled options.
 
@@ -344,8 +355,8 @@ class PreviewScreen(QWidget):
                 background-color: {color};
                 color: #ffffff;
                 border: none;
-                border-radius: 12px;
-                padding: 12px 24px;
+                border-radius: 14px;
+                padding: 18px 32px;
             }}
             QPushButton:hover {{
                 background-color: {darker};
