@@ -1,8 +1,14 @@
 """Configuration models and management."""
 import json
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from typing import Optional, List
+
+
+def _filter_fields(cls, data: dict) -> dict:
+    """Return only keys that exist as fields in the dataclass, ignoring unknown keys."""
+    known = {f.name for f in fields(cls)}
+    return {k: v for k, v in data.items() if k in known}
 
 
 @dataclass
@@ -72,10 +78,10 @@ class AppConfig:
             with open(config_path, 'r') as f:
                 data = json.load(f)
                 return cls(
-                    camera=CameraConfig(**data.get('camera', {})),
-                    email=EmailConfig(**data.get('email', {})),
-                    printer=PrinterConfig(**data.get('printer', {})),
-                    buttons=ButtonsConfig(**data.get('buttons', {})),
+                    camera=CameraConfig(**_filter_fields(CameraConfig, data.get('camera', {}))),
+                    email=EmailConfig(**_filter_fields(EmailConfig, data.get('email', {}))),
+                    printer=PrinterConfig(**_filter_fields(PrinterConfig, data.get('printer', {}))),
+                    buttons=ButtonsConfig(**_filter_fields(ButtonsConfig, data.get('buttons', {}))),
                     available_frames=data.get('available_frames', []),
                     save_to_disk=data.get('save_to_disk', True),
                     photos_directory=data.get('photos_directory', 'assets/photos'),
