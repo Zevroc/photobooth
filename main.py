@@ -429,34 +429,18 @@ class PhotoboothApp(QMainWindow):
             saved_path: Local path of saved photo
         """
         if not self.config.printer.enabled:
-            QMessageBox.warning(
-                self,
-                "Impression désactivée",
-                "L'impression est désactivée dans l'administration."
-            )
+            self.show_toast("🖨 Impression désactivée dans l'administration.")
             return
 
         if not saved_path or not os.path.exists(saved_path):
-            QMessageBox.warning(
-                self,
-                "Fichier introuvable",
-                "La photo à imprimer est introuvable."
-            )
+            self.show_toast("❌ La photo à imprimer est introuvable.")
             return
 
         success = self.printer_controller.print_photo(saved_path)
         if success:
-            QMessageBox.information(
-                self,
-                "Impression",
-                "Photo envoyée à l'imprimante."
-            )
+            self.show_toast("✅ Photo envoyée à l'imprimante !")
         else:
-            QMessageBox.warning(
-                self,
-                "Impression",
-                "Échec de l'impression. Vérifiez la configuration imprimante."
-            )
+            self.show_toast("❌ Échec de l'impression. Vérifiez la configuration imprimante.")
     
     def closeEvent(self, event):
         """Handle application close.

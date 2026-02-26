@@ -488,6 +488,7 @@ class CaptureScreen(QWidget):
         self.is_capturing = True
         self.capture_btn.setEnabled(False)
         # Hide all buttons during capture
+        self.capture_btn.hide()
         self.choose_frame_btn.hide()
         self.gallery_btn.hide()
         self.admin_hotspot_btn.hide()
@@ -538,6 +539,12 @@ class CaptureScreen(QWidget):
     def showEvent(self, event):
         """Handle show event."""
         super().showEvent(event)
+        self.capture_btn.show()
+        self.capture_btn.setEnabled(True)
+        self.choose_frame_btn.show()
+        self.gallery_btn.show()
+        self.countdown_label.hide()
+        self.countdown_label.setText("")
         self._adapt_capture_button_size()
         self.start_camera()
     
