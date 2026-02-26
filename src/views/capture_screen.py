@@ -484,7 +484,7 @@ class CaptureScreen(QWidget):
     
     def start_countdown(self):
         """Start the countdown before capture."""
-        self.countdown = 4
+        self.countdown = 3
         self.is_capturing = True
         self.capture_btn.setEnabled(False)
         # Hide all buttons during capture
@@ -492,20 +492,24 @@ class CaptureScreen(QWidget):
         self.gallery_btn.hide()
         self.admin_hotspot_btn.hide()
         self.fullscreen_hotspot_btn.hide()
+        # Show "3" immediately and beep
+        self.countdown_label.setText(str(self.countdown))
+        self.countdown_label.show()
+        self._play_countdown_sound()
         self.countdown_timer.start(1000)  # 1 second interval
     
     def update_countdown(self):
         """Update countdown display."""
         self.countdown -= 1
         
-        # Play countdown beep on 3, 2, 1
-        if self.countdown in (3, 2, 1):
-            self._play_countdown_sound()
-        
         if self.countdown > 0:
-            return
+            # Display next number and beep
+            self.countdown_label.setText(str(self.countdown))
+            self._play_countdown_sound()
         else:
             self.countdown_timer.stop()
+            self.countdown_label.hide()
+            self.countdown_label.setText("")
             QTimer.singleShot(500, self.capture_photo)
     
     def capture_photo(self):
