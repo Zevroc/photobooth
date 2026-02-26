@@ -1,8 +1,8 @@
 """Main application file."""
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QMessageBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QMessageBox, QLabel
+from PyQt6.QtCore import Qt, QTimer
 
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
@@ -297,6 +297,38 @@ class PhotoboothApp(QMainWindow):
             self.config.printer.enabled
         )
 
+    def show_toast(self, message: str, duration_ms: int = 5000):
+        """Show a temporary notification that auto-dismisses.
+
+        Args:
+            message: Text to display
+            duration_ms: Duration in milliseconds before disappearing
+        """
+        toast = QLabel(message, self)
+        toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        toast.setStyleSheet("""
+            QLabel {
+                background-color: #1e293b;
+                color: #f8fafc;
+                border: 2px solid #3b82f6;
+                border-radius: 16px;
+                padding: 18px 36px;
+                font-size: 20px;
+                font-weight: 700;
+            }
+        """)
+        toast.adjustSize()
+        # Center horizontally, place near bottom
+        w = max(toast.width(), 500)
+        toast.setFixedWidth(w)
+        toast.adjustSize()
+        x = (self.width() - toast.width()) // 2
+        y = self.height() - toast.height() - 60
+        toast.move(x, y)
+        toast.show()
+        toast.raise_()
+        QTimer.singleShot(duration_ms, toast.deleteLater)
+
     def on_preview_onedrive_upload(self, saved_path: str):
         """Upload preview photo to OneDrive on demand.
 
@@ -370,11 +402,7 @@ class PhotoboothApp(QMainWindow):
 
         success = self.email_controller.send_photo(recipient_email, saved_path)
         if success:
-            QMessageBox.information(
-                self,
-                "Email",
-                f"Photo envoyée avec succès à {recipient_email}."
-            )
+            self.show_toast(f"✅ Photo envoyée à {recipient_email}")
         else:
             QMessageBox.warning(
                 self,
