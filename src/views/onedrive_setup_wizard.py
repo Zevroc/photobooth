@@ -44,7 +44,7 @@ class OneDriveSetupWizard(QDialog):
         # Description
         desc = QLabel(
             "Cliquez sur 'Démarrer la connexion' pour obtenir votre code.\n"
-            "Vous devrez le saisir sur votre téléphone ou ordinateur."
+            "Ou utilisez la connexion avec email puis validation téléphone."
         )
         desc.setWordWrap(True)
         desc.setFont(QFont("Segoe UI", 12))
@@ -158,6 +158,31 @@ class OneDriveSetupWizard(QDialog):
         """)
         self.connect_btn.clicked.connect(self.do_connect)
         layout.addWidget(self.connect_btn)
+
+        self.interactive_btn = QPushButton("🔐 Connexion avec email")
+        self.interactive_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        self.interactive_btn.setMinimumHeight(52)
+        self.interactive_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0ea5e9;
+                color: #ffffff;
+                border: none;
+                border-radius: 12px;
+                padding: 12px;
+            }
+            QPushButton:hover {
+                background-color: #0284c7;
+            }
+            QPushButton:pressed {
+                background-color: #0369a1;
+            }
+            QPushButton:disabled {
+                background-color: #cbd5e1;
+                color: #64748b;
+            }
+        """)
+        self.interactive_btn.clicked.connect(self.do_connect_interactive)
+        layout.addWidget(self.interactive_btn)
         
         layout.addSpacing(15)
         
@@ -228,6 +253,7 @@ class OneDriveSetupWizard(QDialog):
         """Start OneDrive connection with device code flow."""
         self.status_label.setText("Génération du code...")
         self.connect_btn.setEnabled(False)
+        self.interactive_btn.setEnabled(False)
         
         # Create controller with default client ID
         self.controller = OneDriveController(
@@ -264,6 +290,7 @@ class OneDriveSetupWizard(QDialog):
         
         self.code_container.show()
         self.connect_btn.hide()
+        self.interactive_btn.hide()
         self.status_label.setText("En attente de votre validation...")
         self.status_label.setStyleSheet("color: #f97316; font-weight: bold;")
         
@@ -298,6 +325,46 @@ class OneDriveSetupWizard(QDialog):
                 "Succès",
                 "Votre compte OneDrive est maintenant connecté!\n"
                 "Cliquez sur 'Sauvegarder' pour terminer."
+            )
+
+    def do_connect_interactive(self):
+        """Start OneDrive connection using interactive browser login."""
+        self.status_label.setText("Ouverture du navigateur...")
+        self.status_label.setStyleSheet("color: #0f172a; font-weight: bold;")
+        self.connect_btn.setEnabled(False)
+        self.interactive_btn.setEnabled(False)
+
+        self.controller = OneDriveController(
+            client_id=self.client_id,
+            tenant_id=self.tenant_id,
+            enabled=True
+        )
+
+        success = self.controller.authenticate_interactive()
+        if success:
+            self.auth_success = True
+            self.status_label.setText("✅ Connexion réussie!")
+            self.status_label.setStyleSheet("color: #22c55e; font-weight: bold;")
+            self.save_btn.setEnabled(True)
+            self.code_container.hide()
+            self.connect_btn.hide()
+            self.interactive_btn.hide()
+
+            QMessageBox.information(
+                self,
+                "Succès",
+                "Connexion OneDrive réussie via email.\n"
+                "Cliquez sur 'Sauvegarder' pour terminer."
+            )
+        else:
+            self.status_label.setText("❌ Connexion échouée")
+            self.status_label.setStyleSheet("color: #dc2626; font-weight: bold;")
+            self.connect_btn.setEnabled(True)
+            self.interactive_btn.setEnabled(True)
+            QMessageBox.warning(
+                self,
+                "Erreur",
+                "Connexion OneDrive impossible. Vérifiez votre connexion."
             )
     
     def save_config(self):

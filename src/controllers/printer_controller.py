@@ -8,6 +8,7 @@ _PAPER_CONSTANTS = {
     "A4":      9,    # 210 x 297 mm
     "Letter":  1,    # 8.5 x 11 in
     "4x6":    256,   # 101.6 x 152.4 mm  (custom)
+    "10x15":  256,   # 100 x 150 mm      (custom)
     "5x7":    256,   # 127 x 178 mm      (custom)
     "100x148": 256,  # 100 x 148 mm      (custom – postcard)
 }
@@ -15,6 +16,7 @@ _PAPER_CONSTANTS = {
 # Custom paper dimensions in units of 0.1 mm  (width, height)
 _PAPER_DIMENSIONS_01MM = {
     "4x6":     (1016, 1524),
+    "10x15":   (1000, 1500),
     "5x7":     (1270, 1778),
     "100x148": (1000, 1480),
 }
@@ -29,7 +31,7 @@ class PrinterController:
         Args:
             printer_name: Name of the printer
             enabled: Whether printing is enabled
-            paper_size: Paper size identifier (A4, Letter, 4x6, 5x7, 100x148)
+            paper_size: Paper size identifier (A4, Letter, 4x6, 10x15, 5x7, 100x148)
         """
         self.printer_name = printer_name
         self.enabled = enabled

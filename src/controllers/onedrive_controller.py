@@ -141,6 +141,40 @@ class OneDriveController:
             return False
 
         return self.complete_device_flow(flow)
+
+    def authenticate_interactive(self, scopes: Optional[list[str]] = None) -> bool:
+        """Authenticate using interactive browser flow (email + phone validation).
+
+        Args:
+            scopes: Optional list of Graph scopes
+
+        Returns:
+            True if authentication successful, False otherwise
+        """
+        if not self.client_id:
+            return False
+
+        requested_scopes = scopes or ["Files.ReadWrite", "offline_access", "User.Read"]
+
+        try:
+            app = self._get_msal_app()
+            result = app.acquire_token_interactive(
+                scopes=requested_scopes,
+                prompt="select_account"
+            )
+
+            if isinstance(result, dict) and "access_token" in result:
+                self.access_token = result["access_token"]
+                self.enabled = True
+                return True
+
+            error = result.get("error_description", "Unknown error") if isinstance(result, dict) else "Unknown error"
+            print(f"OneDrive interactive authentication failed: {error}")
+            return False
+
+        except Exception as e:
+            print(f"Error during OneDrive interactive authentication: {e}")
+            return False
     
     def upload_photo(self, file_path: str, remote_folder: str = "/Photos/Photobooth") -> bool:
         """Upload a photo to OneDrive.

@@ -1,7 +1,6 @@
 """Capture screen for taking photos with countdown."""
 import os
 import sys
-import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QMessageBox
@@ -532,29 +531,18 @@ class CaptureScreen(QWidget):
     def _play_shutter_sound(self):
         """Play a camera shutter sound."""
         try:
-            if sys.platform == "win32":
-                # Use beep sound on Windows
-                winsound.Beep(880, 200)  # 880 Hz for 200ms
+            if sys.platform != "win32":
+                return
+
+            sound_path = os.path.abspath(
+                os.path.join("assets", "sounds", "shutter.wav")
+            )
+            if os.path.exists(sound_path):
+                winsound.PlaySound(
+                    sound_path,
+                    winsound.SND_FILENAME | winsound.SND_ASYNC
+                )
             else:
-                # On Linux/Mac, try pygame if available
-                try:
-                    import pygame
-                    if not pygame.mixer.get_init():
-                        pygame.mixer.init()
-                    # Generate a simple beep (or use system beep)
-                    pygame.mixer.Sound(buffer=self._generate_beep_sound()).play()
-                except (ImportError, Exception):
-                    # Silently ignore if pygame not available
-                    pass
+                winsound.MessageBeep(winsound.MB_OK)
         except Exception:
             pass
-
-    def _generate_beep_sound(self):
-        """Generate a simple beep sound data (for Linux/Mac fallback)."""
-        import struct
-        sample_rate = 22050
-        duration = 0.2
-        frequency = 880
-        samples = int(sample_rate * duration)
-        frames = struct.pack("h" * samples, *[int(32767 * 0.3 * np.sin(2 * np.pi * frequency * x / sample_rate)) for x in range(samples)])
-        return frames

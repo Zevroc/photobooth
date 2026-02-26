@@ -25,4 +25,3 @@ pyyaml==6.0.1
 
 # Utilities
 python-dateutil==2.8.2
-pygame==2.5.2

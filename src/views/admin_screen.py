@@ -583,7 +583,7 @@ class AdminScreen(QWidget):
         layout.addRow("Imprimante:", self.printer_combo)
         
         self.paper_size_combo = QComboBox()
-        self.paper_size_combo.addItems(["A4", "Letter", "4x6", "5x7"])
+        self.paper_size_combo.addItems(["A4", "Letter", "4x6", "10x15", "5x7"])
         self.paper_size_combo.setCurrentText(self.config.printer.paper_size)
         layout.addRow("Format papier:", self.paper_size_combo)
         
