@@ -50,7 +50,15 @@ class OneDriveController:
         if not self.client_id:
             return None, "Client ID non configuré"
 
-        requested_scopes = scopes or ["Files.ReadWrite", "offline_access", "User.Read"]
+        # Use Microsoft Graph scopes with full URLs to avoid MSAL frozenset issues
+        requested_scopes = scopes or [
+            "https://graph.microsoft.com/Files.ReadWrite",
+            "https://graph.microsoft.com/User.Read",
+            "offline_access"
+        ]
+        
+        # Ensure scopes is a list and not a frozenset (MSAL 1.26+ requirement)
+        requested_scopes = list(requested_scopes)
 
         try:
             app = self._get_msal_app()
@@ -189,8 +197,10 @@ class OneDriveController:
         if not self.enabled or not self.client_id:
             return False
 
-        flow = self.start_device_flow()
+        flow, error_msg = self.start_device_flow()
         if not flow:
+            if error_msg:
+                print(f"Authentication failed: {error_msg}")
             return False
 
         return self.complete_device_flow(flow)
@@ -207,7 +217,15 @@ class OneDriveController:
         if not self.client_id:
             return False
 
-        requested_scopes = scopes or ["Files.ReadWrite", "offline_access", "User.Read"]
+        # Use Microsoft Graph scopes with full URLs to avoid MSAL frozenset issues
+        requested_scopes = scopes or [
+            "https://graph.microsoft.com/Files.ReadWrite",
+            "https://graph.microsoft.com/User.Read",
+            "offline_access"
+        ]
+        
+        # Ensure scopes is a list and not a frozenset (MSAL 1.26+ requirement)
+        requested_scopes = list(requested_scopes)
 
         try:
             app = self._get_msal_app()
