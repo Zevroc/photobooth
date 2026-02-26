@@ -493,9 +493,7 @@ class CaptureScreen(QWidget):
         self.gallery_btn.hide()
         self.admin_hotspot_btn.hide()
         self.fullscreen_hotspot_btn.hide()
-        # Show "3" immediately and beep
-        self.countdown_label.setText(str(self.countdown))
-        self.countdown_label.show()
+        # Beep immediately for 3
         self._play_countdown_sound()
         self.countdown_timer.start(1000)  # 1 second interval
     
@@ -504,13 +502,10 @@ class CaptureScreen(QWidget):
         self.countdown -= 1
         
         if self.countdown > 0:
-            # Display next number and beep
-            self.countdown_label.setText(str(self.countdown))
+            # Beep for next number (frame will show it via QPainter)
             self._play_countdown_sound()
         else:
             self.countdown_timer.stop()
-            self.countdown_label.hide()
-            self.countdown_label.setText("")
             QTimer.singleShot(500, self.capture_photo)
     
     def capture_photo(self):
@@ -543,8 +538,6 @@ class CaptureScreen(QWidget):
         self.capture_btn.setEnabled(True)
         self.choose_frame_btn.show()
         self.gallery_btn.show()
-        self.countdown_label.hide()
-        self.countdown_label.setText("")
         self._adapt_capture_button_size()
         self.start_camera()
     
