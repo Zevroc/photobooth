@@ -16,15 +16,6 @@ class CameraConfig:
 
 
 @dataclass
-class OneDriveConfig:
-    """OneDrive configuration."""
-    client_id: str = ""
-    tenant_id: str = ""
-    enabled: bool = False
-    folder_path: str = "/Photos/Photobooth"
-
-
-@dataclass
 class EmailConfig:
     """Email configuration."""
     smtp_server: str = "smtp.gmail.com"
@@ -59,7 +50,6 @@ class ButtonsConfig:
 class AppConfig:
     """Application configuration."""
     camera: CameraConfig
-    onedrive: OneDriveConfig
     email: EmailConfig
     printer: PrinterConfig
     buttons: ButtonsConfig
@@ -84,7 +74,6 @@ class AppConfig:
                 data = json.load(f)
                 return cls(
                     camera=CameraConfig(**data.get('camera', {})),
-                    onedrive=OneDriveConfig(**data.get('onedrive', {})),
                     email=EmailConfig(**data.get('email', {})),
                     printer=PrinterConfig(**data.get('printer', {})),
                     buttons=ButtonsConfig(**data.get('buttons', {})),
@@ -105,7 +94,6 @@ class AppConfig:
             # Return default configuration
             return cls(
                 camera=CameraConfig(),
-                onedrive=OneDriveConfig(),
                 email=EmailConfig(),
                 printer=PrinterConfig(),
                 buttons=ButtonsConfig(),
@@ -129,7 +117,6 @@ class AppConfig:
         with open(config_path, 'w') as f:
             json.dump({
                 'camera': asdict(self.camera),
-                'onedrive': asdict(self.onedrive),
                 'email': asdict(self.email),
                 'printer': asdict(self.printer),
                 'buttons': asdict(self.buttons),

@@ -7,7 +7,6 @@ from PyQt6.QtCore import Qt, QTimer
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
-from src.controllers.onedrive_controller import OneDriveController
 from src.controllers.email_controller import EmailController
 from src.controllers.printer_controller import PrinterController
 
@@ -83,11 +82,6 @@ class PhotoboothApp(QMainWindow):
             (self.config.camera.resolution_width, self.config.camera.resolution_height)
         )
         self.photo_controller = PhotoController(self.config.photos_directory)
-        self.onedrive_controller = OneDriveController(
-            self.config.onedrive.client_id,
-            self.config.onedrive.tenant_id,
-            self.config.onedrive.enabled
-        )
         self.email_controller = EmailController(
             self.config.email.smtp_server,
             self.config.email.smtp_port,
@@ -154,7 +148,6 @@ class PhotoboothApp(QMainWindow):
         
         self.preview_screen.retake_requested.connect(self.show_capture)
         self.preview_screen.done.connect(self.show_capture)
-        self.preview_screen.onedrive_upload_requested.connect(self.on_preview_onedrive_upload)
         self.preview_screen.email_send_requested.connect(self.on_preview_email_send)
         self.preview_screen.print_requested.connect(self.on_preview_print)
         
@@ -178,7 +171,6 @@ class PhotoboothApp(QMainWindow):
 
         self.preview_screen.set_enabled_actions(
             self.config.email.enabled,
-            self.config.onedrive.enabled,
             self.config.printer.enabled
         )
         self.preview_screen.set_preview_title(getattr(self.config, 'preview_title', 'Votre Photo!'))
@@ -240,10 +232,6 @@ class PhotoboothApp(QMainWindow):
         # Save photo to disk
         saved_path = self.photo_controller.save_photo(photo)
         
-        # Upload to OneDrive if enabled
-        if self.config.onedrive.enabled:
-            self.onedrive_controller.upload_photo(saved_path, self.config.onedrive.folder_path)
-        
         # Show preview
         self.preview_screen.set_photo(photo, saved_path)
         self.show_preview()
@@ -270,11 +258,6 @@ class PhotoboothApp(QMainWindow):
         )
 
         # Update service controllers
-        self.onedrive_controller = OneDriveController(
-            self.config.onedrive.client_id,
-            self.config.onedrive.tenant_id,
-            self.config.onedrive.enabled
-        )
         self.email_controller = EmailController(
             self.config.email.smtp_server,
             self.config.email.smtp_port,
@@ -305,7 +288,6 @@ class PhotoboothApp(QMainWindow):
 
         self.preview_screen.set_enabled_actions(
             self.config.email.enabled,
-            self.config.onedrive.enabled,
             self.config.printer.enabled
         )
 
@@ -340,46 +322,6 @@ class PhotoboothApp(QMainWindow):
         toast.show()
         toast.raise_()
         QTimer.singleShot(duration_ms, toast.deleteLater)
-
-    def on_preview_onedrive_upload(self, saved_path: str):
-        """Upload preview photo to OneDrive on demand.
-
-        Args:
-            saved_path: Local path of saved photo
-        """
-        if not self.config.onedrive.enabled:
-            QMessageBox.warning(
-                self,
-                "OneDrive désactivé",
-                "OneDrive est désactivé dans l'administration."
-            )
-            return
-
-        if not saved_path or not os.path.exists(saved_path):
-            QMessageBox.warning(
-                self,
-                "Fichier introuvable",
-                "La photo à envoyer est introuvable."
-            )
-            return
-
-        success = self.onedrive_controller.upload_photo(
-            saved_path,
-            self.config.onedrive.folder_path
-        )
-
-        if success:
-            QMessageBox.information(
-                self,
-                "OneDrive",
-                "Photo envoyée sur OneDrive avec succès."
-            )
-        else:
-            QMessageBox.warning(
-                self,
-                "OneDrive",
-                "Échec de l'envoi sur OneDrive. Vérifiez la configuration et réessayez."
-            )
 
     def on_preview_email_send(self, recipient_email: str, saved_path: str):
         """Send preview photo by email on demand.

@@ -9,10 +9,6 @@ numpy==1.26.4
 opencv-python==4.9.0.80
 Pillow==12.1.1
 
-# OneDrive Integration
-msal==1.26.0
-requests==2.31.0
-
 # Email
 secure-smtplib==0.1.1
 

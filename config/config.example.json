@@ -6,12 +6,6 @@
         "resolution_height": 1080,
         "fps": 30
     },
-    "onedrive": {
-        "client_id": "",
-        "tenant_id": "",
-        "enabled": false,
-        "folder_path": "/Photos/Photobooth"
-    },
     "email": {
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,

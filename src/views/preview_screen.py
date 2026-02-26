@@ -241,7 +241,6 @@ class PreviewScreen(QWidget):
     
     retake_requested = pyqtSignal()  # Signal to retake photo
     done = pyqtSignal()              # Signal when done
-    onedrive_upload_requested = pyqtSignal(str)  # Signal to upload saved path to OneDrive
     email_send_requested = pyqtSignal(str, str)  # Signal to send (recipient, saved_path)
     print_requested = pyqtSignal(str)  # Signal to print saved path
     
@@ -288,14 +287,6 @@ class PreviewScreen(QWidget):
         self.email_btn.setStyleSheet(self._button_style("#3498db"))
         self.email_btn.clicked.connect(self.on_email_clicked)
         actions_layout.addWidget(self.email_btn)
-        
-        # OneDrive button
-        self.onedrive_btn = QPushButton("☁ Envoyer sur OneDrive")
-        self.onedrive_btn.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        self.onedrive_btn.setMinimumHeight(72)
-        self.onedrive_btn.setStyleSheet(self._button_style("#0078d4"))
-        self.onedrive_btn.clicked.connect(self.on_onedrive_clicked)
-        actions_layout.addWidget(self.onedrive_btn)
         
         # Print button
         self.print_btn = QPushButton("🖨 Imprimer la photo")
@@ -348,16 +339,14 @@ class PreviewScreen(QWidget):
         """
         self.title_label.setText(title or "Votre Photo!")
 
-    def set_enabled_actions(self, email_enabled: bool, onedrive_enabled: bool, print_enabled: bool):
+    def set_enabled_actions(self, email_enabled: bool, print_enabled: bool):
         """Show/hide sharing actions based on enabled options.
 
         Args:
             email_enabled: Whether email action is enabled
-            onedrive_enabled: Whether OneDrive action is enabled
             print_enabled: Whether print action is enabled
         """
         self.email_btn.setVisible(email_enabled)
-        self.onedrive_btn.setVisible(onedrive_enabled)
         self.print_btn.setVisible(print_enabled)
     
     def _button_style(self, color):
@@ -436,18 +425,6 @@ class PreviewScreen(QWidget):
                 if email not in self.recent_emails:
                     self.recent_emails.append(email)
                 self.email_send_requested.emit(email, self.saved_path)
-    
-    def on_onedrive_clicked(self):
-        """Handle OneDrive button click."""
-        if not self.saved_path:
-            QMessageBox.warning(
-                self,
-                "OneDrive",
-                "Aucune photo sauvegardée à envoyer."
-            )
-            return
-
-        self.onedrive_upload_requested.emit(self.saved_path)
     
     def on_print_clicked(self):
         """Handle print button click."""

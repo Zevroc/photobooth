@@ -13,7 +13,6 @@ from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
 from src.controllers.printer_controller import PrinterController
 from src.controllers.email_controller import EmailController
-from src.views.onedrive_setup_wizard import OneDriveSetupWizard
 
 
 class AdminScreen(QWidget):
@@ -68,7 +67,6 @@ class AdminScreen(QWidget):
         self.tabs.addTab(self.create_home_tab(), "🏠 Accueil")
         self.tabs.addTab(self.create_frames_tab(), "🖼 Cadres")
         self.tabs.addTab(self.create_buttons_tab(), "🔘 Boutons")
-        self.tabs.addTab(self.create_onedrive_tab(), "☁ OneDrive")
         self.tabs.addTab(self.create_email_tab(), "📧 Email")
         self.tabs.addTab(self.create_printer_tab(), "🖨 Imprimante")
         self.tabs.addTab(self.create_tests_tab(), "🧪 Tests")
@@ -435,78 +433,6 @@ class AdminScreen(QWidget):
         widget.setLayout(layout)
         return widget
     
-    def create_onedrive_tab(self):
-        """Create OneDrive settings tab."""
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
-        
-        form_layout = QFormLayout()
-        form_layout.setSpacing(15)
-        
-        self.onedrive_enabled = QCheckBox("Activer OneDrive")
-        self.onedrive_enabled.setChecked(self.config.onedrive.enabled)
-        form_layout.addRow("", self.onedrive_enabled)
-        
-        self.onedrive_client_id = QLineEdit(self.config.onedrive.client_id)
-        form_layout.addRow("Client ID:", self.onedrive_client_id)
-        
-        self.onedrive_tenant_id = QLineEdit(self.config.onedrive.tenant_id)
-        form_layout.addRow("Tenant ID:", self.onedrive_tenant_id)
-        
-        self.onedrive_folder = QLineEdit(self.config.onedrive.folder_path)
-        form_layout.addRow("Dossier:", self.onedrive_folder)
-        
-        layout.addLayout(form_layout)
-        
-        # Setup wizard button
-        wizard_btn = QPushButton("🧙 Assistant de configuration")
-        wizard_btn.setFont(QFont("Segoe UI", 11, QFont.Weight.Medium))
-        wizard_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #7c3aed;
-                color: #ffffff;
-                border: none;
-                border-radius: 10px;
-                padding: 10px 18px;
-            }
-            QPushButton:hover {
-                background-color: #6d28d9;
-            }
-        """)
-        wizard_btn.clicked.connect(self.open_onedrive_wizard)
-        layout.addWidget(wizard_btn)
-        
-        layout.addStretch()
-        
-        widget.setLayout(layout)
-        return widget
-    
-    def open_onedrive_wizard(self):
-        """Open OneDrive setup wizard."""
-        wizard = OneDriveSetupWizard(
-            self,
-            self.onedrive_client_id.text(),
-            self.onedrive_tenant_id.text()
-        )
-        wizard.config_updated.connect(self.on_onedrive_config_updated)
-        wizard.exec()
-    
-    def on_onedrive_config_updated(self, client_id: str, tenant_id: str):
-        """Handle OneDrive configuration update from wizard."""
-        self.onedrive_client_id.setText(client_id)
-        self.onedrive_tenant_id.setText(tenant_id)
-        if client_id:
-            self.onedrive_enabled.setChecked(True)
-        QMessageBox.information(
-            self,
-            "✓ Configuration mise à jour",
-            "La configuration OneDrive a été mise à jour.\n"
-            "N'oubliez pas de cliquer sur 'Sauvegarder'."
-        )
-
-    
     def create_email_tab(self):
         """Create email settings tab."""
         widget = QWidget()
@@ -708,12 +634,6 @@ class AdminScreen(QWidget):
         selected_resolution = self.resolution_combo.currentData() or (1920, 1080)
         self.config.camera.resolution_width = int(selected_resolution[0])
         self.config.camera.resolution_height = int(selected_resolution[1])
-        
-        # Update OneDrive config
-        self.config.onedrive.enabled = self.onedrive_enabled.isChecked()
-        self.config.onedrive.client_id = self.onedrive_client_id.text()
-        self.config.onedrive.tenant_id = self.onedrive_tenant_id.text()
-        self.config.onedrive.folder_path = self.onedrive_folder.text()
         
         # Update email config
         self.config.email.enabled = self.email_enabled.isChecked()

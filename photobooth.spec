@@ -30,8 +30,6 @@ a = Analysis(
         'PIL.ImageDraw',
         'PIL.ImageFont',
         'numpy',
-        'msal',
-        'requests',
         'yaml',
         'dotenv',
         'dateutil',
