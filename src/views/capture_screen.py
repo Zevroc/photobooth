@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QMessageBox
 )
-from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon, QImage, QPixmap, QFont, QPainter, QColor
 from src.controllers.camera_controller import CameraController
 from src.controllers.photo_controller import PhotoController
@@ -181,26 +181,19 @@ class CaptureScreen(QWidget):
 
         if normal_path and pressed_path:
             button.setText("")
-            icon = QIcon()
-            icon.addPixmap(QPixmap(normal_path), QIcon.Mode.Normal)
-            icon.addPixmap(QPixmap(pressed_path), QIcon.Mode.Active)
-            icon.addPixmap(QPixmap(pressed_path), QIcon.Mode.Disabled)
-            button.setIcon(icon)
-            btn_size = button.size()
-            button.setIconSize(QSize(btn_size.width(), btn_size.height()))
-            button.setStyleSheet("""
-                QPushButton {
+            button.setIcon(QIcon())
+            button.setStyleSheet(f"""
+                QPushButton {{
                     border: none;
                     background: transparent;
-                }
-                QPushButton:hover {
-                    background: rgba(255,255,255,20);
-                    border-radius: 14px;
-                }
-                QPushButton:pressed {
-                    background: rgba(0,0,0,30);
-                    border-radius: 14px;
-                }
+                    border-image: url({normal_path}) 0 0 0 0 stretch stretch;
+                }}
+                QPushButton:pressed {{
+                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
+                }}
+                QPushButton:disabled {{
+                    border-image: url({pressed_path}) 0 0 0 0 stretch stretch;
+                }}
             """)
             return
 
@@ -393,7 +386,7 @@ class CaptureScreen(QWidget):
             display_frame = frame
             if self.selected_frame:
                 try:
-                    display_frame = self.photo_controller.apply_frame_to_array(frame, self.selected_frame)
+                    display_frame = self.photo_controller.apply_frame_to_array_preview(frame, self.selected_frame)
                 except Exception:
                     display_frame = frame
 

@@ -83,6 +83,32 @@ class PhotoController:
 
         return np.array(combined.convert('RGB'))
     
+    def apply_frame_to_array_preview(self, image_data: np.ndarray, frame_path: str) -> np.ndarray:
+        """Apply a frame overlay for live preview.
+
+        The frame is scaled to match the camera feed's dimensions so the live
+        view is never distorted regardless of the frame's natural resolution.
+
+        Args:
+            image_data: RGB image data (camera feed)
+            frame_path: Path to frame image
+
+        Returns:
+            RGB image with frame overlaid at camera resolution
+        """
+        if image_data is None or not frame_path or not os.path.exists(frame_path):
+            return image_data
+
+        frame = Image.open(frame_path).convert('RGBA')
+        photo_img = Image.fromarray(image_data).convert('RGBA')
+        photo_w, photo_h = photo_img.size
+
+        # Scale frame to exactly match the camera feed dimensions
+        frame_scaled = frame.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
+
+        combined = Image.alpha_composite(photo_img, frame_scaled)
+        return np.array(combined.convert('RGB'))
+
     def save_photo(self, photo: Photo, filename: Optional[str] = None) -> str:
         """Save photo to disk.
         
