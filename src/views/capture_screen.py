@@ -128,8 +128,8 @@ class CaptureScreen(QWidget):
 
         top_hotspot_layout = QHBoxLayout()
         top_hotspot_layout.addWidget(self.admin_hotspot_btn)
-        top_hotspot_layout.addWidget(self.fullscreen_hotspot_btn)
         top_hotspot_layout.addStretch()
+        top_hotspot_layout.addWidget(self.fullscreen_hotspot_btn)
         overlay_layout.addLayout(top_hotspot_layout)
 
         overlay_layout.addWidget(self.countdown_label, 0, Qt.AlignmentFlag.AlignCenter)
