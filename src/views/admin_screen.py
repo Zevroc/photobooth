@@ -950,6 +950,18 @@ class AdminScreen(QWidget):
             self.sound_test_label.setText(f"❌ Erreur: {str(e)[:50]}")
             self.sound_test_label.setStyleSheet("color: #ef4444; font-size: 10px;")
 
+    def browse_shutter_sound(self):
+        """Browse for a custom shutter sound file."""
+        start_dir = self._get_app_root()
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Sélectionner un son d'obturateur",
+            start_dir,
+            "Audio WAV (*.wav)"
+        )
+        if file_path:
+            self.shutter_sound_edit.setText(self._to_relative_path(file_path))
+
     def browse_countdown_sound(self):
         """Browse for a custom countdown sound file."""
         start_dir = self._get_app_root()
