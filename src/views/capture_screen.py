@@ -86,7 +86,7 @@ class CaptureScreen(QWidget):
         self.capture_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.gallery_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        # Hidden admin hotspot (top-right)
+        # Hidden admin hotspot (top-left)
         self.admin_hotspot_btn = QPushButton("")
         self.admin_hotspot_btn.setToolTip("Administration")
         self.admin_hotspot_btn.setFixedSize(90, 90)
@@ -103,6 +103,23 @@ class CaptureScreen(QWidget):
         """)
         self.admin_hotspot_btn.clicked.connect(self.admin_requested.emit)
 
+        # Hidden fullscreen hotspot (top-left, beside admin)
+        self.fullscreen_hotspot_btn = QPushButton("")
+        self.fullscreen_hotspot_btn.setToolTip("Plein écran")
+        self.fullscreen_hotspot_btn.setFixedSize(90, 90)
+        self.fullscreen_hotspot_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.fullscreen_hotspot_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: rgba(15, 23, 42, 22);
+                border-radius: 12px;
+            }
+        """)
+        self.fullscreen_hotspot_btn.clicked.connect(self._go_fullscreen)
+
         self._style_secondary_buttons()
         
         # Place countdown on top of preview
@@ -110,8 +127,9 @@ class CaptureScreen(QWidget):
         overlay_layout.setContentsMargins(16, 16, 16, 18)
 
         top_hotspot_layout = QHBoxLayout()
-        top_hotspot_layout.addStretch()
         top_hotspot_layout.addWidget(self.admin_hotspot_btn)
+        top_hotspot_layout.addWidget(self.fullscreen_hotspot_btn)
+        top_hotspot_layout.addStretch()
         overlay_layout.addLayout(top_hotspot_layout)
 
         overlay_layout.addWidget(self.countdown_label, 0, Qt.AlignmentFlag.AlignCenter)
@@ -338,6 +356,12 @@ class CaptureScreen(QWidget):
             return
         target_diameter = int(ref_size * 0.24)
         self.update_capture_button_style(target_diameter)
+
+    def _go_fullscreen(self):
+        """Switch the main window to fullscreen."""
+        win = self.window()
+        if win:
+            win.showFullScreen()
     
     def set_frame(self, frame_path: str):
         """Set the selected frame.
@@ -454,6 +478,7 @@ class CaptureScreen(QWidget):
         self.choose_frame_btn.hide()
         self.gallery_btn.hide()
         self.admin_hotspot_btn.hide()
+        self.fullscreen_hotspot_btn.hide()
         self.countdown_timer.start(1000)  # 1 second interval
     
     def update_countdown(self):
@@ -486,6 +511,7 @@ class CaptureScreen(QWidget):
         self.choose_frame_btn.show()
         self.gallery_btn.show()
         self.admin_hotspot_btn.show()
+        self.fullscreen_hotspot_btn.show()
     
     def showEvent(self, event):
         """Handle show event."""

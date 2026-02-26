@@ -44,12 +44,25 @@ class PrinterConfig:
 
 
 @dataclass
+class ButtonsConfig:
+    """Button image configuration."""
+    capture_normal: str = ""
+    capture_pressed: str = ""
+    choose_frame_normal: str = ""
+    choose_frame_pressed: str = ""
+    gallery_normal: str = ""
+    gallery_pressed: str = ""
+    capture_mode: str = "image"
+
+
+@dataclass
 class AppConfig:
     """Application configuration."""
     camera: CameraConfig
     onedrive: OneDriveConfig
     email: EmailConfig
     printer: PrinterConfig
+    buttons: ButtonsConfig
     available_frames: List[str]
     save_to_disk: bool = True
     photos_directory: str = "assets/photos"
@@ -72,6 +85,7 @@ class AppConfig:
                     onedrive=OneDriveConfig(**data.get('onedrive', {})),
                     email=EmailConfig(**data.get('email', {})),
                     printer=PrinterConfig(**data.get('printer', {})),
+                    buttons=ButtonsConfig(**data.get('buttons', {})),
                     available_frames=data.get('available_frames', []),
                     save_to_disk=data.get('save_to_disk', True),
                     photos_directory=data.get('photos_directory', 'assets/photos'),
@@ -90,6 +104,7 @@ class AppConfig:
                 onedrive=OneDriveConfig(),
                 email=EmailConfig(),
                 printer=PrinterConfig(),
+                buttons=ButtonsConfig(),
                 available_frames=[],
                 save_to_disk=True,
                 photos_directory='assets/photos',
@@ -111,6 +126,7 @@ class AppConfig:
                 'onedrive': asdict(self.onedrive),
                 'email': asdict(self.email),
                 'printer': asdict(self.printer),
+                'buttons': asdict(self.buttons),
                 'available_frames': self.available_frames,
                 'save_to_disk': self.save_to_disk,
                 'photos_directory': self.photos_directory,
