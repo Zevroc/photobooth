@@ -165,7 +165,15 @@ class OneDriveController:
             print("Client ID is required for authentication")
             return False
         
-        requested_scopes = ["https://graph.microsoft.com/.default", "offline_access"]
+        # Use Microsoft Graph scopes with full URLs to avoid MSAL frozenset issues
+        requested_scopes = [
+            "https://graph.microsoft.com/Files.ReadWrite",
+            "https://graph.microsoft.com/User.Read",
+            "offline_access"
+        ]
+        
+        # Ensure scopes is a list and not a frozenset (MSAL 1.26+ requirement)
+        requested_scopes = list(requested_scopes)
         
         try:
             app = self._get_msal_app()
@@ -185,7 +193,15 @@ class OneDriveController:
             return False
             
         except Exception as e:
-            print(f"Error during OneDrive authentication: {e}")
+            print(f"\n❌ OneDrive Credentials Authentication Error: {str(e)}")
+            print(f"   Type d'erreur: {type(e).__name__}")
+            print(f"   Diagnostic possibles:")
+            print(f"   - Email ou mot de passe incorrect")
+            print(f"   - Proxy d'entreprise bloquant la connexion")
+            print(f"   - Authentification multi-facteurs requise")
+            print(f"   - Certificat SSL/TLS invalide")
+            import traceback
+            print(f"   Traceback: {traceback.format_exc()}")
             return False
     
     def authenticate(self) -> bool:
