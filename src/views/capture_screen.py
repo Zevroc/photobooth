@@ -37,8 +37,7 @@ class CaptureScreen(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
         
-        self.countdown_timer = QTimer()
-        self.countdown_timer.timeout.connect(self.update_countdown)
+        # countdown uses singleShot chain (no repeating timer to avoid tick accumulation)
 
         self.frame_preview_cache = {}
         
@@ -513,19 +512,17 @@ class CaptureScreen(QWidget):
         self.gallery_btn.hide()
         self.admin_hotspot_btn.hide()
         self.fullscreen_hotspot_btn.hide()
-        # Beep immediately for 3
+        # Beep immediately for 3 then schedule each tick with singleShot
         self._play_countdown_sound()
-        self.countdown_timer.start(1000)  # 1 second interval
-    
-    def update_countdown(self):
-        """Update countdown display."""
+        QTimer.singleShot(1000, self._countdown_tick)
+
+    def _countdown_tick(self):
+        """One countdown step — called via singleShot chain to guarantee 1s gaps."""
         self.countdown -= 1
-        
         if self.countdown > 0:
-            # Beep for next number (frame will show it via QPainter)
             self._play_countdown_sound()
+            QTimer.singleShot(1000, self._countdown_tick)
         else:
-            self.countdown_timer.stop()
             QTimer.singleShot(500, self.capture_photo)
     
     def capture_photo(self):
