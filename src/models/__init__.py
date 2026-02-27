@@ -19,6 +19,8 @@ class CameraConfig:
     resolution_width: int = 1920
     resolution_height: int = 1080
     fps: int = 30
+    camera_type: str = "webcam"   # "webcam" | "dslr"
+    gphoto2_path: str = "gphoto2"  # path to gphoto2 executable
 
 
 @dataclass

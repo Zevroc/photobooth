@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, QTimer
 
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
+from src.controllers.dslr_controller import DSLRController
 from src.controllers.photo_controller import PhotoController
 from src.controllers.email_controller import EmailController
 from src.controllers.printer_controller import PrinterController
@@ -67,6 +68,16 @@ QGroupBox::title {
 """
 
 
+def _build_camera_controller(config):
+    """Instantiate the correct camera controller based on config."""
+    if getattr(config.camera, "camera_type", "webcam") == "dslr":
+        return DSLRController(getattr(config.camera, "gphoto2_path", "gphoto2"))
+    return CameraController(
+        config.camera.device_id,
+        (config.camera.resolution_width, config.camera.resolution_height),
+    )
+
+
 class PhotoboothApp(QMainWindow):
     """Main photobooth application."""
     
@@ -77,10 +88,7 @@ class PhotoboothApp(QMainWindow):
         self.config = AppConfig.load()
         
         # Initialize controllers
-        self.camera_controller = CameraController(
-            self.config.camera.device_id,
-            (self.config.camera.resolution_width, self.config.camera.resolution_height)
-        )
+        self.camera_controller = _build_camera_controller(self.config)
         self.photo_controller = PhotoController(self.config.photos_directory)
         self.email_controller = EmailController(
             self.config.email.smtp_server,
@@ -242,10 +250,7 @@ class PhotoboothApp(QMainWindow):
         self.config = AppConfig.load()
         
         # Update camera controller
-        self.camera_controller = CameraController(
-            self.config.camera.device_id,
-            (self.config.camera.resolution_width, self.config.camera.resolution_height)
-        )
+        self.camera_controller = _build_camera_controller(self.config)
         self.capture_screen.camera = self.camera_controller
         
         # Update button configuration

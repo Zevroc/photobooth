@@ -2,8 +2,8 @@
 import os
 import sys
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QLineEdit, QComboBox, QCheckBox,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QLineEdit, QComboBox, QCheckBox, QRadioButton,
     QTabWidget, QFormLayout, QFileDialog,
     QGroupBox, QMessageBox, QTextEdit, QDialog
 )
@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QImage, QPixmap, QCursor
 from src.models import AppConfig
 from src.controllers.camera_controller import CameraController
+from src.controllers.dslr_controller import DSLRController
 from src.controllers.printer_controller import PrinterController
 from src.controllers.email_controller import EmailController
 
@@ -149,8 +150,25 @@ class AdminScreen(QWidget):
         layout.setSpacing(15)
         form_layout.setSpacing(15)
         form_layout.setContentsMargins(20, 20, 20, 8)
-        
-        # Camera selection
+
+        # ── Camera type selector ──────────────────────────────────────────
+        type_layout = QHBoxLayout()
+        self.camera_type_webcam = QRadioButton("Webcam / caméra USB vidéo")
+        self.camera_type_dslr = QRadioButton("Appareil photo DSLR (gphoto2)")
+        current_type = getattr(self.config.camera, "camera_type", "webcam")
+        self.camera_type_webcam.setChecked(current_type != "dslr")
+        self.camera_type_dslr.setChecked(current_type == "dslr")
+        type_layout.addWidget(self.camera_type_webcam)
+        type_layout.addWidget(self.camera_type_dslr)
+        type_layout.addStretch()
+        layout.addLayout(type_layout)
+
+        # ── Webcam section ────────────────────────────────────────────────
+        self.webcam_widget = QWidget()
+        webcam_form = QFormLayout()
+        webcam_form.setSpacing(12)
+        webcam_form.setContentsMargins(0, 8, 0, 0)
+
         self.camera_combo = QComboBox()
         cameras = CameraController.list_available_cameras()
         if cameras:
@@ -158,15 +176,11 @@ class AdminScreen(QWidget):
                 self.camera_combo.addItem(name, device_id)
         else:
             self.camera_combo.addItem("Aucune caméra détectée", 0)
-        
-        # Set current camera
         current_index = self.camera_combo.findData(self.config.camera.device_id)
         if current_index >= 0:
             self.camera_combo.setCurrentIndex(current_index)
-        
-        form_layout.addRow("Caméra:", self.camera_combo)
-        
-        # Resolution
+        webcam_form.addRow("Caméra:", self.camera_combo)
+
         self.resolution_combo = QComboBox()
         self.resolution_combo.addItem("1920x1080 (Full HD)", (1920, 1080))
         self.resolution_combo.addItem("1280x720 (HD)", (1280, 720))
@@ -175,10 +189,51 @@ class AdminScreen(QWidget):
         resolution_index = self.resolution_combo.findData(current_resolution)
         if resolution_index >= 0:
             self.resolution_combo.setCurrentIndex(resolution_index)
-        form_layout.addRow("Résolution:", self.resolution_combo)
+        webcam_form.addRow("Résolution:", self.resolution_combo)
 
-        layout.addLayout(form_layout)
+        self.webcam_widget.setLayout(webcam_form)
+        layout.addWidget(self.webcam_widget)
 
+        # ── DSLR section ──────────────────────────────────────────────────
+        self.dslr_widget = QWidget()
+        dslr_layout = QVBoxLayout()
+        dslr_layout.setContentsMargins(0, 8, 0, 0)
+        dslr_layout.setSpacing(10)
+
+        gphoto_row = QHBoxLayout()
+        gphoto_row.addWidget(QLabel("Chemin gphoto2 :"))
+        self.gphoto2_path_edit = QLineEdit(getattr(self.config.camera, "gphoto2_path", "gphoto2"))
+        self.gphoto2_path_edit.setPlaceholderText("gphoto2  ou  C:\\gphoto2\\gphoto2.exe")
+        gphoto_row.addWidget(self.gphoto2_path_edit)
+        browse_gphoto_btn = QPushButton("Parcourir…")
+        browse_gphoto_btn.clicked.connect(self._browse_gphoto2)
+        gphoto_row.addWidget(browse_gphoto_btn)
+        dslr_layout.addLayout(gphoto_row)
+
+        detect_row = QHBoxLayout()
+        detect_btn = QPushButton("🔍 Détecter les appareils")
+        detect_btn.clicked.connect(self._detect_dslr_cameras)
+        detect_row.addWidget(detect_btn)
+        detect_row.addStretch()
+        dslr_layout.addLayout(detect_row)
+
+        self.dslr_detected_label = QLabel("")
+        self.dslr_detected_label.setWordWrap(True)
+        dslr_layout.addWidget(self.dslr_detected_label)
+
+        info = QLabel(
+            "ℹ️  Installez <b>gphoto2</b> sur le PC (Linux/Mac) ou téléchargez "
+            "<b>gphoto2.exe</b> (Windows via cygwin/MSYS2). "
+            "Réglez l'Olympus E-500 en mode <b>PTP</b> dans ses paramètres USB."
+        )
+        info.setWordWrap(True)
+        info.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        dslr_layout.addWidget(info)
+
+        self.dslr_widget.setLayout(dslr_layout)
+        layout.addWidget(self.dslr_widget)
+
+        # ── Preview ───────────────────────────────────────────────────────
         preview_title = QLabel("Aperçu caméra")
         preview_title.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
         layout.addWidget(preview_title)
@@ -196,14 +251,47 @@ class AdminScreen(QWidget):
         """)
         layout.addWidget(self.camera_preview_label)
 
+        # Signals
         self.camera_combo.currentIndexChanged.connect(self.start_camera_preview)
         self.resolution_combo.currentIndexChanged.connect(self.start_camera_preview)
+        self.camera_type_webcam.toggled.connect(self._on_camera_type_changed)
+        self.camera_type_dslr.toggled.connect(self._on_camera_type_changed)
         layout.addStretch()
-        
+
         widget.setLayout(layout)
+        # Apply initial visibility
+        self._on_camera_type_changed()
         return widget
-    
-    def create_frames_tab(self):
+
+    def _on_camera_type_changed(self):
+        """Show/hide webcam vs DSLR sections based on selection."""
+        is_dslr = self.camera_type_dslr.isChecked()
+        self.webcam_widget.setVisible(not is_dslr)
+        self.dslr_widget.setVisible(is_dslr)
+        self.start_camera_preview()
+
+    def _browse_gphoto2(self):
+        """Browse for gphoto2 executable."""
+        from PyQt6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Sélectionner gphoto2", "",
+            "Exécutables (*.exe *.*);;Tous les fichiers (*)"
+        )
+        if path:
+            self.gphoto2_path_edit.setText(path)
+
+    def _detect_dslr_cameras(self):
+        """Run gphoto2 --auto-detect and show results."""
+        gphoto2 = self.gphoto2_path_edit.text().strip() or "gphoto2"
+        self.dslr_detected_label.setText("Détection en cours…")
+        cameras = DSLRController.detect_cameras(gphoto2)
+        if cameras:
+            self.dslr_detected_label.setText("✅ " + "\n".join(cameras))
+            self.start_camera_preview()
+        else:
+            self.dslr_detected_label.setText("❌ Aucun appareil détecté")
+
+
         """Create frames settings tab."""
         widget = QWidget()
         layout = QVBoxLayout()
@@ -605,12 +693,17 @@ class AdminScreen(QWidget):
     def save_config(self):
         """Save configuration."""
         # Update camera config
-        selected_device = self.camera_combo.currentData()
-        self.config.camera.device_id = int(selected_device) if selected_device is not None else 0
-        self.config.camera.device_name = self.camera_combo.currentText()
-        selected_resolution = self.resolution_combo.currentData() or (1920, 1080)
-        self.config.camera.resolution_width = int(selected_resolution[0])
-        self.config.camera.resolution_height = int(selected_resolution[1])
+        if self.camera_type_dslr.isChecked():
+            self.config.camera.camera_type = "dslr"
+            self.config.camera.gphoto2_path = self.gphoto2_path_edit.text().strip() or "gphoto2"
+        else:
+            self.config.camera.camera_type = "webcam"
+            selected_device = self.camera_combo.currentData()
+            self.config.camera.device_id = int(selected_device) if selected_device is not None else 0
+            self.config.camera.device_name = self.camera_combo.currentText()
+            selected_resolution = self.resolution_combo.currentData() or (1920, 1080)
+            self.config.camera.resolution_width = int(selected_resolution[0])
+            self.config.camera.resolution_height = int(selected_resolution[1])
         
         # Update email config
         self.config.email.enabled = self.email_enabled.isChecked()
@@ -662,16 +755,30 @@ class AdminScreen(QWidget):
 
         self.stop_camera_preview()
 
-        device_id = self.camera_combo.currentData()
-        resolution = self.resolution_combo.currentData() or (1280, 720)
-        self.preview_controller = CameraController(int(device_id) if device_id is not None else 0, resolution)
-
-        if self.preview_controller.start():
-            self.camera_preview_label.setText("")
-            self.preview_timer.start(80)
+        if self.camera_type_dslr.isChecked():
+            gphoto2 = self.gphoto2_path_edit.text().strip() or "gphoto2"
+            self.preview_controller = DSLRController(gphoto2)
+            if self.preview_controller.start():
+                self.camera_preview_label.setText("")
+                self.preview_timer.start(1500)  # DSLR liveview is slow
+            else:
+                self.camera_preview_label.setText(
+                    f"DSLR : {self.preview_controller.last_error or 'Appareil non détecté'}"
+                )
+                self.preview_controller = None
         else:
-            self.camera_preview_label.setPixmap(QPixmap())
-            self.camera_preview_label.setText("Impossible d'ouvrir la caméra sélectionnée")
+            device_id = self.camera_combo.currentData()
+            resolution = self.resolution_combo.currentData() or (1280, 720)
+            self.preview_controller = CameraController(
+                int(device_id) if device_id is not None else 0, resolution
+            )
+            if self.preview_controller.start():
+                self.camera_preview_label.setText("")
+                self.preview_timer.start(80)
+            else:
+                self.camera_preview_label.setPixmap(QPixmap())
+                self.camera_preview_label.setText("Impossible d'ouvrir la caméra sélectionnée")
+                self.preview_controller = None
 
     def update_camera_preview(self):
         """Update camera preview frame."""
