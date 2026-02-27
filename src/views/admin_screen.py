@@ -323,6 +323,38 @@ class AdminScreen(QWidget):
         widget.setLayout(layout)
         return widget
 
+    def create_frames_tab(self):
+        """Create frames settings tab."""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        info = QLabel("Les cadres doivent être des images PNG avec transparence")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        # Frames directory
+        dir_layout = QHBoxLayout()
+        self.frames_dir_edit = QLineEdit("assets/frames")
+        self.frames_dir_edit.setReadOnly(True)
+        dir_layout.addWidget(QLabel("Dossier:"))
+        dir_layout.addWidget(self.frames_dir_edit)
+
+        browse_btn = QPushButton("Parcourir...")
+        browse_btn.clicked.connect(self.browse_frames_dir)
+        dir_layout.addWidget(browse_btn)
+
+        layout.addLayout(dir_layout)
+
+        self.show_no_frame_option_check = QCheckBox("Afficher l'option Sans cadre")
+        self.show_no_frame_option_check.setChecked(self.config.show_no_frame_option)
+        layout.addWidget(self.show_no_frame_option_check)
+
+        layout.addStretch()
+
+        widget.setLayout(layout)
+        return widget
+
     def create_buttons_tab(self):
         """Create custom button images settings tab."""
         widget = QWidget()
