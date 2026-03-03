@@ -8,10 +8,11 @@ import numpy as np
 @dataclass
 class Photo:
     """Represents a captured photo."""
-    image_data: np.ndarray  # The actual image data
+    image_data: np.ndarray  # The actual image data (with frame if applied)
     timestamp: datetime
     frame_path: Optional[str] = None
     frame_applied: bool = False
+    raw_image_data: Optional[np.ndarray] = None  # Original image without frame
     width: int = 0
     height: int = 0
     

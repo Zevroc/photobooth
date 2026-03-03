@@ -533,6 +533,7 @@ class CaptureScreen(QWidget):
         if photo:
             # Apply frame if selected
             if self.selected_frame:
+                photo.raw_image_data = photo.image_data.copy()  # Save raw before frame
                 photo = self.photo_controller.apply_frame(photo, self.selected_frame)
             
             self.photo_captured.emit(photo)

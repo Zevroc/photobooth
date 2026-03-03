@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QMessageB
 from PyQt6.QtCore import Qt, QTimer
 
 from src.models import AppConfig
+from src.models.photo import Photo
 from src.controllers.camera_controller import CameraController
 from src.controllers.dslr_controller import DSLRController
 from src.controllers.photo_controller import PhotoController
@@ -239,6 +240,16 @@ class PhotoboothApp(QMainWindow):
         
         # Save photo to disk
         saved_path = self.photo_controller.save_photo(photo)
+
+        # Also save original photo without frame
+        if photo.raw_image_data is not None:
+            timestamp = photo.timestamp.strftime("%Y%m%d_%H%M%S")
+            raw_filename = f"photo_{timestamp}_original.jpg"
+            raw_photo = Photo(
+                image_data=photo.raw_image_data,
+                timestamp=photo.timestamp,
+            )
+            self.photo_controller.save_photo(raw_photo, raw_filename)
         
         # Show preview
         self.preview_screen.set_photo(photo, saved_path)
