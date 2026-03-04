@@ -237,18 +237,12 @@ class PhotoboothApp(QMainWindow):
         timestamp = photo.timestamp.strftime("%Y%m%d_%H%M%S")
         base_filename = f"photo_{timestamp}.jpg"
 
-        has_frame = bool(photo and photo.frame_path and not photo.frame_applied)
-
-        # Save original (no frame) only when a frame will be applied
-        if has_frame:
-            self.photo_controller.save_photo(photo, f"photo_{timestamp}_original.jpg")
-
-        if has_frame:
-            photo = self.photo_controller.apply_frame(photo, photo.frame_path)
-            self.current_photo = photo
-
-        # Save final photo (with frame if any)
-        saved_path = self.photo_controller.save_photo(photo, base_filename)
+        # Photos arrive from capture_screen already with frame applied if one was selected
+        # Always save photos if enabled (with or without frame)
+        if self.config.save_to_disk:
+            saved_path = self.photo_controller.save_photo(photo, base_filename)
+        else:
+            saved_path = None
 
         # Show preview
         self.preview_screen.set_photo(photo, saved_path)
