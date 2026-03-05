@@ -531,9 +531,11 @@ class CaptureScreen(QWidget):
         photo = self.camera.capture_photo(self.selected_frame)
         
         if photo:
-            # Apply frame if selected
+            # Store frame path in photo object but don't apply yet
+            # The main app will handle saving original + applying frame + saving framed
             if self.selected_frame:
-                photo = self.photo_controller.apply_frame(photo, self.selected_frame)
+                photo.frame_path = self.selected_frame
+                photo.frame_applied = False
             
             self.photo_captured.emit(photo)
         else:
