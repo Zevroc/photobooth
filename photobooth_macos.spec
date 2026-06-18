@@ -63,7 +63,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,   # UPX disabled — breaks macOS codesigning on framework binaries
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=True,  # required for macOS Open With / file association
@@ -79,7 +79,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,   # UPX disabled on macOS
     upx_exclude=[],
     name='Photobooth',
 )
