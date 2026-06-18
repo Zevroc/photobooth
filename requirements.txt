@@ -2,11 +2,11 @@
 PyQt6==6.6.1
 PyQt6-Qt6==6.6.1
 PyQt6-sip==13.6.0
-PyQt6-WebEngine==6.6.0
+# PyQt6-WebEngine intentionally omitted — not used by the app, saves 200-300 MB in builds
 
 # Camera and Image Processing
 numpy==1.26.4
-opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
 Pillow==12.1.1
 
 # Email
