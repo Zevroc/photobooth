@@ -1,4 +1,4 @@
-name: Smoke Test macOS (screenshot)
+name: Smoke Test macOS (screenshots)
 
 on:
   workflow_dispatch:
@@ -31,10 +31,10 @@ jobs:
           QT_LOGGING_RULES: '*.debug=false'
         run: python test_smoke.py
 
-      - name: Upload screenshot
-        if: always()   # upload even if the test step failed
+      - name: Upload screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: macos-screenshot
-          path: screenshots/smoke_test.png
+          name: macos-screenshots
+          path: screenshots/
           retention-days: 30
