@@ -1,0 +1,20 @@
+{
+    "name": "Photobooth",
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "postCreateCommand": "bash .devcontainer/setup.sh",
+    "forwardPorts": [6080],
+    "portsAttributes": {
+        "6080": {
+            "label": "Photobooth (noVNC)",
+            "onAutoForward": "openBrowser"
+        }
+    },
+    "remoteEnv": {
+        "DISPLAY": ":99"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": ["ms-python.python"]
+        }
+    }
+}
