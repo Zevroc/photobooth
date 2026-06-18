@@ -1,7 +1,9 @@
 """Tests for EmailController with a mocked SMTP server."""
 import smtplib
 from unittest.mock import patch, MagicMock
+import numpy as np
 import pytest
+from PIL import Image
 
 from src.controllers.email_controller import EmailController
 
@@ -27,12 +29,18 @@ def _mock_smtp():
     return cm, server
 
 
+def _make_jpeg(path):
+    """Save a tiny but valid JPEG so MIMEImage can detect the subtype."""
+    img = Image.fromarray(np.zeros((10, 10, 3), dtype=np.uint8))
+    img.save(str(path), "JPEG")
+
+
 # --- send_photo ---
 
 def test_send_photo_disabled(tmp_path):
     ctrl = EmailController(enabled=False)
     photo = tmp_path / "p.jpg"
-    photo.write_bytes(b"fake")
+    _make_jpeg(photo)
     assert ctrl.send_photo("x@x.com", str(photo)) is False
 
 
@@ -42,7 +50,7 @@ def test_send_photo_missing_file(ctrl):
 
 def test_send_photo_success(ctrl, tmp_path):
     photo = tmp_path / "p.jpg"
-    photo.write_bytes(b"\xff\xd8\xff" + b"\x00" * 100)
+    _make_jpeg(photo)
     cm, server = _mock_smtp()
 
     with patch("src.controllers.email_controller.smtplib.SMTP", return_value=cm):
@@ -61,7 +69,7 @@ def test_send_photo_no_tls(tmp_path):
         use_tls=False, enabled=True,
     )
     photo = tmp_path / "p.jpg"
-    photo.write_bytes(b"fake")
+    _make_jpeg(photo)
     cm, server = _mock_smtp()
 
     with patch("src.controllers.email_controller.smtplib.SMTP", return_value=cm):
@@ -72,7 +80,7 @@ def test_send_photo_no_tls(tmp_path):
 
 def test_send_photo_smtp_error_returns_false(ctrl, tmp_path):
     photo = tmp_path / "p.jpg"
-    photo.write_bytes(b"fake")
+    _make_jpeg(photo)
     with patch("src.controllers.email_controller.smtplib.SMTP",
                side_effect=smtplib.SMTPException("boom")):
         assert ctrl.send_photo("dest@x.com", str(photo)) is False
