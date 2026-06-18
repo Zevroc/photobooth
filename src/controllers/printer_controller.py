@@ -1,6 +1,7 @@
 """Printer controller for printing photos."""
 import os
 import sys
+import subprocess
 
 
 # Windows paper size constants (DMPAPER_*)
@@ -19,6 +20,16 @@ _PAPER_DIMENSIONS_01MM = {
     "10x15":   (1000, 1500),
     "5x7":     (1270, 1778),
     "100x148": (1000, 1480),
+}
+
+# macOS CUPS media names
+_MACOS_MEDIA = {
+    "A4":      "iso_a4_210x297mm",
+    "Letter":  "na_letter_8.5x11in",
+    "4x6":     "na_index-4x6_4x6in",
+    "10x15":   "iso_a6_105x148mm",
+    "5x7":     "na_5x7_5x7in",
+    "100x148": "iso_a6_105x148mm",
 }
 
 
@@ -56,6 +67,8 @@ class PrinterController:
         try:
             if sys.platform == "win32":
                 return self._print_windows(photo_path)
+            elif sys.platform == "darwin":
+                return self._print_macos(photo_path)
             else:
                 print(f"Printing not supported on {sys.platform}")
                 return False
@@ -74,6 +87,18 @@ class PrinterController:
             if sys.platform == "win32":
                 import win32print
                 return [p[2] for p in win32print.EnumPrinters(2)]
+            elif sys.platform == "darwin":
+                result = subprocess.run(
+                    ["lpstat", "-p"],
+                    capture_output=True, text=True
+                )
+                printers = []
+                for line in result.stdout.splitlines():
+                    if line.startswith("printer "):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            printers.append(parts[1])
+                return printers
             return []
         except ImportError:
             return []
@@ -99,6 +124,32 @@ class PrinterController:
                 devmode.PaperLength = dims[1]
         except Exception as e:
             print(f"Could not set DevMode paper size: {e}")
+
+    def _print_macos(self, photo_path: str) -> bool:
+        """Print a photo on macOS using CUPS (lp command).
+
+        Args:
+            photo_path: Absolute path to the photo file.
+
+        Returns:
+            True if the print job was submitted successfully.
+        """
+        try:
+            cmd = ["lp"]
+            if self.printer_name:
+                cmd += ["-d", self.printer_name]
+            media = _MACOS_MEDIA.get(self.paper_size)
+            if media:
+                cmd += ["-o", f"media={media}"]
+            cmd += ["-o", "fit-to-page"]
+            cmd.append(photo_path)
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"lp error: {result.stderr.strip()}")
+            return result.returncode == 0
+        except Exception as e:
+            print(f"macOS printing error: {e}")
+            return False
 
     def _print_windows(self, photo_path: str) -> bool:
         """Print a photo on Windows using GDI (win32ui + win32print + PIL).

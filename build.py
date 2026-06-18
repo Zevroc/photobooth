@@ -8,6 +8,7 @@ import sys
 import subprocess
 import os
 import shutil
+import platform
 
 
 def clean_build_directories():
@@ -35,19 +36,26 @@ def check_dependencies():
         return False
 
 
+def get_spec_file():
+    """Return the appropriate PyInstaller spec file for the current platform."""
+    if platform.system() == "Darwin":
+        return "photobooth_macos.spec"
+    return "photobooth.spec"
+
+
 def build_executable():
     """Build the executable using PyInstaller."""
-    print("[INFO] Building executable...")
+    spec_file = get_spec_file()
+    print(f"[INFO] Building executable using {spec_file}...")
     print("   This may take a few minutes...\n")
-    
+
     try:
-        # Run PyInstaller with the spec file
         result = subprocess.run(
-            [sys.executable, '-m', 'PyInstaller', 'photobooth.spec', '--clean'],
+            [sys.executable, '-m', 'PyInstaller', spec_file, '--clean'],
             capture_output=True,
             text=True
         )
-        
+
         if result.returncode == 0:
             print("[OK] Build completed successfully!\n")
             return True
@@ -56,76 +64,96 @@ def build_executable():
             print("\nError output:")
             print(result.stderr)
             return False
-            
+
     except Exception as e:
         print(f"[ERROR] Error during build: {e}")
         return False
 
 
 def verify_build():
-    """Verify that the executable was created."""
+    """Verify that the output was created."""
     print("[INFO] Verifying build output...")
-    
-    import platform
-    
-    # Determine executable extension based on platform
-    exe_extension = '.exe' if platform.system() == 'Windows' else ''
-    exe_name = f'Photobooth{exe_extension}'
-    exe_path = os.path.join('dist', 'Photobooth', exe_name)
-    
+
+    system = platform.system()
+
+    if system == "Darwin":
+        app_path = os.path.join('dist', 'Photobooth.app')
+        if os.path.exists(app_path):
+            size_mb = sum(
+                os.path.getsize(os.path.join(dp, f))
+                for dp, _, files in os.walk(app_path)
+                for f in files
+            ) / (1024 * 1024)
+            print(f"[OK] App bundle created: {app_path}")
+            print(f"  Size: {size_mb:.1f} MB\n")
+            return True
+        print(f"[ERROR] App bundle not found at {app_path}\n")
+        return False
+
+    exe_extension = '.exe' if system == 'Windows' else ''
+    exe_path = os.path.join('dist', 'Photobooth', f'Photobooth{exe_extension}')
+
     if os.path.exists(exe_path):
         size_mb = os.path.getsize(exe_path) / (1024 * 1024)
         print(f"[OK] Executable created: {exe_path}")
         print(f"  Size: {size_mb:.1f} MB\n")
         return True
-    else:
-        print(f"[ERROR] Executable not found at {exe_path}\n")
-        return False
+
+    print(f"[ERROR] Executable not found at {exe_path}\n")
+    return False
 
 
 def main():
     """Main build process."""
+    system = platform.system()
+
     print("=" * 60)
     print("Photobooth Application - Build Script")
     print("=" * 60)
     print()
-    
-    # Check dependencies
+    print(f"Platform: {system} ({platform.machine()})\n")
+
     if not check_dependencies():
         sys.exit(1)
-    
-    # Clean previous builds
+
     clean_build_directories()
-    
-    # Build executable
+
     if not build_executable():
         sys.exit(1)
-    
-    # Verify build
+
     if not verify_build():
         sys.exit(1)
-    
-    # Success message
+
     print("=" * 60)
     print("[OK] Build completed successfully!")
     print("=" * 60)
     print()
-    print("The executable is located at:")
-    print("  dist/Photobooth/Photobooth.exe")
+
+    if system == "Darwin":
+        print("The app bundle is located at:")
+        print("  dist/Photobooth.app")
+        print()
+        print("To distribute the application:")
+        print("1. Copy dist/Photobooth.app to the target Mac")
+        print("2. Or drag it to /Applications to install system-wide")
+        print("3. On first launch, right-click > Open to bypass Gatekeeper")
+        print("   (unless the app is signed with an Apple Developer ID)")
+    elif system == "Windows":
+        print("The executable is located at:")
+        print("  dist\\Photobooth\\Photobooth.exe")
+        print()
+        print("To distribute the application:")
+        print("1. Copy the entire 'dist/Photobooth' folder")
+        print("2. The folder contains all necessary files and dependencies")
+        print("3. Users can run Photobooth.exe directly (no Python needed)")
+    else:
+        print("The executable is located at:")
+        print("  dist/Photobooth/Photobooth")
+        print()
+        print("To distribute the application:")
+        print("1. Copy the entire 'dist/Photobooth' folder")
+
     print()
-    print("Distribution files included:")
-    print("  - Photobooth.exe (main application)")
-    print("  - DISTRIBUTION_README.md (user guide)")
-    print("  - assets/ (frames, photos, temp)")
-    print("  - config/ (configuration)")
-    print("  - _internal/ (dependencies)")
-    print()
-    print("To distribute the application:")
-    print("1. Copy the entire 'dist/Photobooth' folder")
-    print("2. The folder contains all necessary files and dependencies")
-    print("3. Users can run Photobooth.exe directly (no Python needed)")
-    print()
-    print("Note: Users should read DISTRIBUTION_README.md for setup")
     print("=" * 60)
 
 

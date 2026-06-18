@@ -21,6 +21,7 @@ Les photos peuvent être prises soit par la webcam du PC soit par un appareil ph
 - **MSAL** - Intégration OneDrive via Microsoft Graph API
 - **SMTP** - Envoi d'emails
 - **win32print** - Support d'impression Windows
+- **CUPS (lp)** - Support d'impression macOS
 
 ## 📱 Fonctionnalités principales
 
@@ -67,6 +68,8 @@ Les photos peuvent être prises soit par la webcam du PC soit par un appareil ph
 photobooth/
 ├── main.py                    # Point d'entrée
 ├── requirements.txt           # Dépendances
+├── photobooth.spec            # Config build Windows/Linux
+├── photobooth_macos.spec      # Config build macOS (.app bundle)
 ├── src/
 │   ├── models/               # Modèles de données
 │   ├── controllers/          # Logique métier
@@ -92,6 +95,7 @@ cd photobooth
 # Créer l'environnement virtuel
 python -m venv venv
 venv\Scripts\activate  # Windows
+source venv/bin/activate  # macOS / Linux
 
 # Installer les dépendances
 pip install -r requirements.txt
@@ -111,7 +115,7 @@ python main.py
 
 ### 📦 Compilation en Exécutable
 
-Pour créer un fichier exécutable Windows (.exe) :
+Pour créer un fichier exécutable :
 
 ```bash
 # Installer les dépendances de l'application
@@ -120,15 +124,30 @@ pip install -r requirements.txt
 # Installer les dépendances de build
 pip install -r requirements-build.txt
 
-# Compiler l'application
+# Compiler l'application (détecte automatiquement la plateforme)
 python build.py
 ```
 
-L'exécutable sera créé dans `dist/Photobooth/Photobooth.exe`
+- **Windows** → `dist/Photobooth/Photobooth.exe`
+- **macOS** → `dist/Photobooth.app` (bundle cliquable)
+- **Linux** → `dist/Photobooth/Photobooth`
 
 Pour plus de détails, consultez le **[Guide de Compilation](docs/BUILD.md)**
 
-## 🖥️ Dépendances système (Linux et Windows)
+## 🖥️ Dépendances système
+
+### macOS (10.13+)
+
+Aucune dépendance système supplémentaire n'est requise. L'application utilise CUPS (intégré à macOS) pour l'impression.
+
+Sur la première ouverture du `.app` compilé, macOS peut afficher un avertissement Gatekeeper :
+
+```bash
+# Contourner Gatekeeper (si l'app n'est pas signée)
+xattr -cr dist/Photobooth.app
+```
+
+Ou faire un clic droit > Ouvrir la première fois.
 
 ### Linux (Ubuntu/Debian)
 
@@ -175,7 +194,7 @@ python build.py
 ## 📖 Documentation
 
 - **[Guide d'installation](docs/INSTALLATION.md)** - Installation détaillée et configuration
-- **[Guide de compilation](docs/BUILD.md)** - Compilation en exécutable (.exe)
+- **[Guide de compilation](docs/BUILD.md)** - Compilation en exécutable
 - **[Architecture](docs/ARCHITECTURE.md)** - Structure et design de l'application
 - **[Guide de développement](docs/DEVELOPMENT.md)** - Contribution et développement
 - **[Guide des cadres](docs/FRAMES.md)** - Création et gestion des cadres photo
@@ -216,4 +235,4 @@ Les contributions sont les bienvenues ! Consultez le [guide de développement](d
 - [ ] Mode GIF/Boomerang
 - [ ] Partage réseaux sociaux
 - [ ] Mode galerie
-- [ ] Support Linux/macOS
+- [x] Support macOS
